@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ParticipantAvatar, getParticipantById } from "@/components/ParticipantAvatar";
 
 interface PaymentHistoryProps {
   payments: Payment[];
@@ -25,10 +26,6 @@ export function PaymentHistory({
 }: PaymentHistoryProps) {
   const getParticipantName = (id: string) => {
     return participants.find((p) => p.id === id)?.name || "Desconhecido";
-  };
-
-  const getParticipantAvatar = (id: string) => {
-    return participants.find((p) => p.id === id)?.avatar || "bg-muted";
   };
 
   if (payments.length === 0) {
@@ -69,24 +66,18 @@ export function PaymentHistory({
               key={payment.id}
               className="p-4 bg-accent/50 rounded-xl border border-border/30"
             >
-              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    <div
-                      className={`w-8 h-8 rounded-full ${getParticipantAvatar(
-                        payment.settlementFrom
-                      )} flex items-center justify-center text-primary-foreground text-sm font-medium`}
-                    >
-                      {getParticipantName(payment.settlementFrom).charAt(0).toUpperCase()}
-                    </div>
+                    <ParticipantAvatar 
+                      participant={getParticipantById(participants, payment.settlementFrom)} 
+                      size="md"
+                    />
                     <span className="text-muted-foreground text-sm">→</span>
-                    <div
-                      className={`w-8 h-8 rounded-full ${getParticipantAvatar(
-                        payment.settlementTo
-                      )} flex items-center justify-center text-primary-foreground text-sm font-medium`}
-                    >
-                      {getParticipantName(payment.settlementTo).charAt(0).toUpperCase()}
-                    </div>
+                    <ParticipantAvatar 
+                      participant={getParticipantById(participants, payment.settlementTo)} 
+                      size="md"
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground truncate">

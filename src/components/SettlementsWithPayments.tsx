@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, CreditCard, Upload, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, CreditCard, Upload } from "lucide-react";
 import { Settlement, Participant, Payment } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ParticipantAvatar, getParticipantById } from "@/components/ParticipantAvatar";
 
 interface SettlementsWithPaymentsProps {
   settlements: Settlement[];
@@ -49,10 +50,6 @@ export function SettlementsWithPayments({
 
   const getParticipantName = (id: string) => {
     return participants.find((p) => p.id === id)?.name || "Desconhecido";
-  };
-
-  const getParticipantAvatar = (id: string) => {
-    return participants.find((p) => p.id === id)?.avatar || "bg-muted";
   };
 
   const getPaidAmount = (from: string, to: string) => {
@@ -133,25 +130,19 @@ export function SettlementsWithPayments({
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`w-8 h-8 rounded-full ${getParticipantAvatar(
-                            settlement.from
-                          )} flex items-center justify-center text-primary-foreground text-sm font-medium`}
-                        >
-                          {getParticipantName(settlement.from).charAt(0).toUpperCase()}
-                        </div>
+                    <div className="flex items-center gap-2">
+                        <ParticipantAvatar 
+                          participant={getParticipantById(participants, settlement.from)} 
+                          size="md"
+                        />
                         <span className="font-medium text-foreground text-sm">
                           {getParticipantName(settlement.from)}
                         </span>
                         <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                        <div
-                          className={`w-8 h-8 rounded-full ${getParticipantAvatar(
-                            settlement.to
-                          )} flex items-center justify-center text-primary-foreground text-sm font-medium`}
-                        >
-                          {getParticipantName(settlement.to).charAt(0).toUpperCase()}
-                        </div>
+                        <ParticipantAvatar 
+                          participant={getParticipantById(participants, settlement.to)} 
+                          size="md"
+                        />
                         <span className="font-medium text-foreground text-sm">
                           {getParticipantName(settlement.to)}
                         </span>
