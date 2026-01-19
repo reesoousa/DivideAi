@@ -20,11 +20,19 @@ export function useExpenseSplitter() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
 
-  const addParticipant = (name: string, role?: string, participationPercentage?: number) => {
+  const addParticipant = (
+    name: string, 
+    role?: string, 
+    participationPercentage?: number,
+    avatarColor?: string,
+    avatarImage?: string
+  ) => {
     const newParticipant: Participant = {
       id: crypto.randomUUID(),
       name,
-      avatar: avatarColors[participants.length % avatarColors.length],
+      avatar: avatarColor || avatarColors[participants.length % avatarColors.length],
+      avatarType: avatarImage ? 'image' : 'color',
+      avatarImage,
       role,
       participationPercentage: participationPercentage || 100,
     };
