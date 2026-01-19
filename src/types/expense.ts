@@ -36,6 +36,16 @@ export interface BalanceDetail {
   balance: number;
 }
 
+export interface Payment {
+  id: string;
+  settlementFrom: string;
+  settlementTo: string;
+  amount: number;
+  date: Date;
+  receiptUrl?: string;
+  note?: string;
+}
+
 export interface Group {
   id: string;
   name: string;

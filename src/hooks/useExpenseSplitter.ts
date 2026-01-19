@@ -1,19 +1,24 @@
 import { useState, useMemo } from "react";
-import { Participant, Expense, Settlement, BalanceDetail } from "@/types/expense";
+import { Participant, Expense, Settlement, BalanceDetail, Payment } from "@/types/expense";
 
+// IMPORTANT: No white/light colors - all must be visible against light backgrounds
 const avatarColors = [
   "bg-primary",
-  "bg-secondary",
   "bg-chart-1",
+  "bg-chart-2",
+  "bg-chart-3",
   "bg-chart-4",
   "bg-chart-5",
-  "bg-chart-2",
-  "bg-accent-foreground",
+  "bg-slate-500",
+  "bg-zinc-500",
+  "bg-stone-500",
+  "bg-neutral-500",
 ];
 
 export function useExpenseSplitter() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
 
   const addParticipant = (name: string, role?: string, participationPercentage?: number) => {
     const newParticipant: Participant = {
@@ -179,19 +184,68 @@ export function useExpenseSplitter() {
     return result;
   }, [participants, balanceDetails]);
 
+  const addPayment = (
+    settlementFrom: string,
+    settlementTo: string,
+    amount: number,
+    receiptUrl?: string,
+    note?: string
+  ) => {
+    const newPayment: Payment = {
+      id: crypto.randomUUID(),
+      settlementFrom,
+      settlementTo,
+      amount,
+      date: new Date(),
+      receiptUrl,
+      note,
+    };
+    setPayments([...payments, newPayment]);
+  };
+
+  const removePayment = (id: string) => {
+    setPayments(payments.filter((p) => p.id !== id));
+  };
+
+  // Calculate remaining settlements after payments
+  const remainingSettlements = useMemo((): Settlement[] => {
+    const paidAmounts: Record<string, number> = {};
+    
+    payments.forEach(payment => {
+      const key = `${payment.settlementFrom}-${payment.settlementTo}`;
+      paidAmounts[key] = (paidAmounts[key] || 0) + payment.amount;
+    });
+
+    return settlements
+      .map(settlement => {
+        const key = `${settlement.from}-${settlement.to}`;
+        const paid = paidAmounts[key] || 0;
+        const remaining = settlement.amount - paid;
+        return {
+          ...settlement,
+          amount: Math.max(0, Math.round(remaining * 100) / 100),
+        };
+      })
+      .filter(s => s.amount > 0.01);
+  }, [settlements, payments]);
+
   return {
     participants,
     expenses,
+    payments,
     totalExpenses,
     expensesByParticipant,
     expensesByCategory,
     expensesByMonth,
     balanceDetails,
     settlements,
+    remainingSettlements,
     addParticipant,
     updateParticipant,
     removeParticipant,
     addExpense,
     removeExpense,
+    addPayment,
+    removePayment,
   };
 }
