@@ -4,18 +4,19 @@ import { ParticipantsList } from "@/components/ParticipantsList";
 import { AddExpenseForm } from "@/components/AddExpenseForm";
 import { ExpensesList } from "@/components/ExpensesList";
 import { SummaryCard } from "@/components/SummaryCard";
-import { SettlementsList } from "@/components/SettlementsList";
 import { ExpenseCharts } from "@/components/ExpenseCharts";
 import { TransparencyCard } from "@/components/TransparencyCard";
 import { CategorySummary } from "@/components/CategorySummary";
 import { GroupsList } from "@/components/GroupsList";
+import { SettlementsWithPayments } from "@/components/SettlementsWithPayments";
+import { PaymentHistory } from "@/components/PaymentHistory";
 import { useExpenseSplitter } from "@/hooks/useExpenseSplitter";
 import { useGroups } from "@/hooks/useGroups";
 import { BottomNavItem } from "@/components/BottomNavItem";
-import { Users, Receipt, BarChart3, Calculator, ArrowLeft } from "lucide-react";
+import { Users, Receipt, BarChart3, Calculator, ArrowLeft, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type TabValue = "expenses" | "participants" | "charts" | "transparency";
+type TabValue = "expenses" | "participants" | "charts" | "transparency" | "history";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<TabValue>("expenses");
@@ -33,17 +34,21 @@ const Index = () => {
   const {
     participants,
     expenses,
+    payments,
     totalExpenses,
     expensesByParticipant,
     expensesByCategory,
     expensesByMonth,
     balanceDetails,
     settlements,
+    remainingSettlements,
     addParticipant,
     updateParticipant,
     removeParticipant,
     addExpense,
     removeExpense,
+    addPayment,
+    removePayment,
   } = useExpenseSplitter();
 
   const renderContent = () => {
@@ -59,10 +64,6 @@ const Index = () => {
               expenses={expenses}
               participants={participants}
               onRemoveExpense={removeExpense}
-            />
-            <SettlementsList
-              settlements={settlements}
-              participants={participants}
             />
           </div>
         );
@@ -102,9 +103,22 @@ const Index = () => {
               settlements={settlements}
               totalExpenses={totalExpenses}
             />
-            <SettlementsList
+            <SettlementsWithPayments
               settlements={settlements}
+              remainingSettlements={remainingSettlements}
               participants={participants}
+              payments={payments}
+              onAddPayment={addPayment}
+            />
+          </div>
+        );
+      case "history":
+        return (
+          <div className="space-y-4">
+            <PaymentHistory
+              payments={payments}
+              participants={participants}
+              onRemovePayment={removePayment}
             />
           </div>
         );
@@ -186,7 +200,7 @@ const Index = () => {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50">
         <div className="max-w-lg mx-auto px-4 pb-4">
-          <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg px-2 py-1">
+          <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg px-1 py-1">
             <div className="flex items-center justify-around">
               <BottomNavItem
                 icon={Receipt}
@@ -211,6 +225,12 @@ const Index = () => {
                 label="Cálculo"
                 isActive={activeTab === "transparency"}
                 onClick={() => setActiveTab("transparency")}
+              />
+              <BottomNavItem
+                icon={History}
+                label="Histórico"
+                isActive={activeTab === "history"}
+                onClick={() => setActiveTab("history")}
               />
             </div>
           </div>
