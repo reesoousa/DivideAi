@@ -17,7 +17,7 @@ export function useGroups() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
-  const addGroup = (name: string, description?: string) => {
+  const addGroup = (name: string, description?: string, isRecurring: boolean = false, billingDay?: number) => {
     const newGroup: Group = {
       id: crypto.randomUUID(),
       name,
@@ -25,6 +25,8 @@ export function useGroups() {
       icon: groupIcons[groups.length % groupIcons.length],
       color: groupColors[groups.length % groupColors.length],
       createdAt: new Date(),
+      isRecurring,
+      billingDay: isRecurring ? billingDay : undefined,
     };
     setGroups([...groups, newGroup]);
     return newGroup.id;
