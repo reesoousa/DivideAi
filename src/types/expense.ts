@@ -55,4 +55,24 @@ export interface Group {
   icon: string;
   color: string;
   createdAt: Date;
+  isRecurring: boolean;
+  billingDay?: number; // Dia de cobrança mensal (1-31)
+}
+
+export type RecurringItemStatus = 'pending' | 'paid' | 'partial';
+
+export interface RecurringItem {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+  status: RecurringItemStatus;
+  paidAmount?: number;
+  paidBy?: string;
+  dueDay?: number; // Dia do vencimento
+}
+
+export interface MonthlyRecurringData {
+  month: string; // formato: YYYY-MM
+  items: RecurringItem[];
 }

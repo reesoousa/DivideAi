@@ -17,6 +17,7 @@ interface ExpenseChartsProps {
   expensesByMonth: Record<string, number>;
   expensesByParticipant: Record<string, number>;
   participants: Participant[];
+  showMonthlyChart?: boolean;
 }
 
 function formatCurrency(value: number): string {
@@ -41,6 +42,7 @@ export function ExpenseCharts({
   expensesByMonth,
   expensesByParticipant,
   participants,
+  showMonthlyChart = true,
 }: ExpenseChartsProps) {
   const categoryData = useMemo(() => {
     return Object.entries(expensesByCategory)
@@ -96,7 +98,7 @@ export function ExpenseCharts({
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="category" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className={`grid w-full ${showMonthlyChart ? 'grid-cols-3' : 'grid-cols-2'} mb-4`}>
             <TabsTrigger value="category" className="text-xs">
               <PieChart className="h-3 w-3 mr-1" />
               Categorias
@@ -105,10 +107,12 @@ export function ExpenseCharts({
               <BarChart3 className="h-3 w-3 mr-1" />
               Participantes
             </TabsTrigger>
-            <TabsTrigger value="monthly" className="text-xs">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Mensal
-            </TabsTrigger>
+            {showMonthlyChart && (
+              <TabsTrigger value="monthly" className="text-xs">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                Mensal
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="category" className="mt-0">

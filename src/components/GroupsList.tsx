@@ -3,12 +3,22 @@ import { Group } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, ChevronRight, FolderOpen } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Trash2, ChevronRight, FolderOpen, Repeat, Calendar } from "lucide-react";
 import { LucideIcon } from "@/components/LucideIcon";
+import { Badge } from "@/components/ui/badge";
 
 interface GroupsListProps {
   groups: Group[];
-  onAddGroup: (name: string, description?: string) => string;
+  onAddGroup: (name: string, description?: string, isRecurring?: boolean, billingDay?: number) => string;
   onRemoveGroup: (id: string) => void;
   onSelectGroup: (id: string) => void;
 }
@@ -21,15 +31,32 @@ export function GroupsList({
 }: GroupsListProps) {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupDescription, setNewGroupDescription] = useState("");
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [billingDay, setBillingDay] = useState<string>("1");
   const [showForm, setShowForm] = useState(false);
 
   const handleAdd = () => {
     if (newGroupName.trim()) {
-      onAddGroup(newGroupName.trim(), newGroupDescription.trim() || undefined);
+      onAddGroup(
+        newGroupName.trim(),
+        newGroupDescription.trim() || undefined,
+        isRecurring,
+        isRecurring ? parseInt(billingDay) : undefined
+      );
       setNewGroupName("");
       setNewGroupDescription("");
+      setIsRecurring(false);
+      setBillingDay("1");
       setShowForm(false);
     }
+  };
+
+  const resetForm = () => {
+    setShowForm(false);
+    setNewGroupName("");
+    setNewGroupDescription("");
+    setIsRecurring(false);
+    setBillingDay("1");
   };
 
   return (
@@ -51,7 +78,7 @@ export function GroupsList({
       </CardHeader>
       <CardContent className="space-y-3">
         {showForm && (
-          <div className="bg-muted/30 rounded-xl p-4 space-y-3 border border-border/30">
+          <div className="bg-muted/30 rounded-xl p-4 space-y-4 border border-border/30">
             <Input
               placeholder="Nome do grupo (ex: Casa, Viagem SP)"
               value={newGroupName}
@@ -64,19 +91,55 @@ export function GroupsList({
               onChange={(e) => setNewGroupDescription(e.target.value)}
               className="bg-background/80"
             />
+
+            {/* Toggle para grupo recorrente */}
+            <div className="bg-background/50 rounded-lg p-3 space-y-3 border border-border/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Repeat className="h-4 w-4 text-primary" />
+                  <Label htmlFor="recurring-toggle" className="font-medium cursor-pointer">
+                    Grupo recorrente
+                  </Label>
+                </div>
+                <Switch
+                  id="recurring-toggle"
+                  checked={isRecurring}
+                  onCheckedChange={setIsRecurring}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {isRecurring
+                  ? "Habilita filtros mensais, itens fixos e controle de pagamentos recorrentes."
+                  : "Ideal para viagens, eventos ou divisões pontuais."}
+              </p>
+
+              {isRecurring && (
+                <div className="pt-2 border-t border-border/30">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Label className="text-sm text-muted-foreground">Dia de cobrança</Label>
+                  </div>
+                  <Select value={billingDay} onValueChange={setBillingDay}>
+                    <SelectTrigger className="mt-2 bg-background/80">
+                      <SelectValue placeholder="Selecione o dia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                        <SelectItem key={day} value={day.toString()}>
+                          Dia {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2">
               <Button onClick={handleAdd} size="sm" className="flex-1">
                 Criar Grupo
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setShowForm(false);
-                  setNewGroupName("");
-                  setNewGroupDescription("");
-                }}
-              >
+              <Button variant="ghost" size="sm" onClick={resetForm}>
                 Cancelar
               </Button>
             </div>
@@ -103,9 +166,17 @@ export function GroupsList({
                   <LucideIcon name={group.icon} className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">
-                    {group.name}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-foreground truncate">
+                      {group.name}
+                    </p>
+                    {group.isRecurring && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30">
+                        <Repeat className="h-2.5 w-2.5 mr-0.5" />
+                        Recorrente
+                      </Badge>
+                    )}
+                  </div>
                   {group.description && (
                     <p className="text-xs text-muted-foreground truncate">
                       {group.description}

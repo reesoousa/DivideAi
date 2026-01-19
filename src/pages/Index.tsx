@@ -10,14 +10,19 @@ import { CategorySummary } from "@/components/CategorySummary";
 import { GroupsList } from "@/components/GroupsList";
 import { SettlementsWithPayments } from "@/components/SettlementsWithPayments";
 import { PaymentHistory } from "@/components/PaymentHistory";
+import { MonthSelector } from "@/components/MonthSelector";
+import { RecurringItemsList } from "@/components/RecurringItemsList";
+import { RecurringSummaryCard } from "@/components/RecurringSummaryCard";
 import { useExpenseSplitter } from "@/hooks/useExpenseSplitter";
 import { useGroups } from "@/hooks/useGroups";
+import { useRecurringItems } from "@/hooks/useRecurringItems";
 import { BottomNavItem } from "@/components/BottomNavItem";
-import { Users, Receipt, BarChart3, ArrowLeft, History } from "lucide-react";
+import { Users, Receipt, BarChart3, ArrowLeft, History, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LucideIcon } from "@/components/LucideIcon";
+import { Badge } from "@/components/ui/badge";
 
-type TabValue = "expenses" | "participants" | "charts" | "history";
+type TabValue = "expenses" | "participants" | "charts" | "history" | "recurring";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<TabValue>("expenses");
@@ -51,6 +56,20 @@ const Index = () => {
     addPayment,
     removePayment,
   } = useExpenseSplitter();
+
+  const {
+    selectedMonth,
+    currentMonthItems,
+    monthlyTotals,
+    addRecurringItem,
+    removeRecurringItem,
+    updateItemStatus,
+    updateRecurringItem,
+    goToNextMonth,
+    goToPreviousMonth,
+  } = useRecurringItems();
+
+  const isRecurringGroup = selectedGroup?.isRecurring ?? false;
 
   const renderContent = () => {
     switch (activeTab) {
@@ -100,11 +119,13 @@ const Index = () => {
               expensesByCategory={expensesByCategory}
               totalExpenses={totalExpenses}
             />
+            {/* Gráfico mensal apenas para grupos recorrentes */}
             <ExpenseCharts
               expensesByCategory={expensesByCategory}
-              expensesByMonth={expensesByMonth}
+              expensesByMonth={isRecurringGroup ? expensesByMonth : {}}
               expensesByParticipant={expensesByParticipant}
               participants={participants}
+              showMonthlyChart={isRecurringGroup}
             />
           </div>
         );
@@ -115,6 +136,25 @@ const Index = () => {
               payments={payments}
               participants={participants}
               onRemovePayment={removePayment}
+            />
+          </div>
+        );
+      case "recurring":
+        return (
+          <div className="space-y-4">
+            <MonthSelector
+              selectedMonth={selectedMonth}
+              onPreviousMonth={goToPreviousMonth}
+              onNextMonth={goToNextMonth}
+            />
+            <RecurringItemsList
+              items={currentMonthItems}
+              participants={participants}
+              onAddItem={addRecurringItem}
+              onRemoveItem={removeRecurringItem}
+              onUpdateStatus={updateItemStatus}
+              onUpdateItem={updateRecurringItem}
+              monthlyTotals={monthlyTotals}
             />
           </div>
         );
@@ -157,7 +197,10 @@ const Index = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={deselectGroup}
+            onClick={() => {
+              deselectGroup();
+              setActiveTab("expenses");
+            }}
             className="h-9 w-9"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -171,9 +214,17 @@ const Index = () => {
               )}
             </div>
             <div className="min-w-0">
-              <h1 className="font-bold text-foreground truncate">
-                {selectedGroup?.name}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-bold text-foreground truncate">
+                  {selectedGroup?.name}
+                </h1>
+                {isRecurringGroup && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30">
+                    <Repeat className="h-2.5 w-2.5 mr-0.5" />
+                    Recorrente
+                  </Badge>
+                )}
+              </div>
               {selectedGroup?.description && (
                 <p className="text-xs text-muted-foreground truncate">
                   {selectedGroup.description}
@@ -185,10 +236,20 @@ const Index = () => {
       </header>
       
       <main className="max-w-lg mx-auto px-4 py-6 pb-28">
-        <SummaryCard
-          totalExpenses={totalExpenses}
-          participantsCount={participants.length}
-        />
+        {isRecurringGroup ? (
+          <RecurringSummaryCard
+            totalMonthly={monthlyTotals.total}
+            paidAmount={monthlyTotals.paid + monthlyTotals.partial}
+            pendingAmount={monthlyTotals.pending}
+            participantsCount={participants.length}
+            billingDay={selectedGroup?.billingDay}
+          />
+        ) : (
+          <SummaryCard
+            totalExpenses={totalExpenses}
+            participantsCount={participants.length}
+          />
+        )}
 
         <div className="mt-6">
           {renderContent()}
@@ -200,6 +261,14 @@ const Index = () => {
         <div className="max-w-lg mx-auto px-4 pb-4">
           <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg px-1 py-1">
             <div className="flex items-center justify-around">
+              {isRecurringGroup && (
+                <BottomNavItem
+                  icon={Repeat}
+                  label="Fixos"
+                  isActive={activeTab === "recurring"}
+                  onClick={() => setActiveTab("recurring")}
+                />
+              )}
               <BottomNavItem
                 icon={Receipt}
                 label="Gastos"
