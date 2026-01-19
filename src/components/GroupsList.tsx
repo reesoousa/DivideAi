@@ -12,13 +12,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, ChevronRight, FolderOpen, Repeat, Calendar } from "lucide-react";
+import { Plus, Trash2, ChevronRight, FolderOpen, Repeat, Calendar, Sparkles } from "lucide-react";
 import { LucideIcon } from "@/components/LucideIcon";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
+// Ícones disponíveis para escolha
+const availableIcons = [
+  { name: "Home", label: "Casa" },
+  { name: "Plane", label: "Viagem" },
+  { name: "PartyPopper", label: "Festa" },
+  { name: "Briefcase", label: "Trabalho" },
+  { name: "UtensilsCrossed", label: "Restaurante" },
+  { name: "Gamepad2", label: "Jogos" },
+  { name: "Palmtree", label: "Férias" },
+  { name: "Car", label: "Carro" },
+  { name: "ShoppingBag", label: "Compras" },
+  { name: "GraduationCap", label: "Estudos" },
+  { name: "Heart", label: "Relacionamento" },
+  { name: "Music", label: "Música" },
+  { name: "Camera", label: "Fotografia" },
+  { name: "Coffee", label: "Café" },
+  { name: "Dumbbell", label: "Academia" },
+  { name: "Baby", label: "Família" },
+];
 
 interface GroupsListProps {
   groups: Group[];
-  onAddGroup: (name: string, description?: string, isRecurring?: boolean, billingDay?: number) => string;
+  onAddGroup: (name: string, description?: string, isRecurring?: boolean, billingDay?: number, icon?: string) => string;
   onRemoveGroup: (id: string) => void;
   onSelectGroup: (id: string) => void;
 }
@@ -33,6 +54,7 @@ export function GroupsList({
   const [newGroupDescription, setNewGroupDescription] = useState("");
   const [isRecurring, setIsRecurring] = useState(false);
   const [billingDay, setBillingDay] = useState<string>("1");
+  const [selectedIcon, setSelectedIcon] = useState<string>("Home");
   const [showForm, setShowForm] = useState(false);
 
   const handleAdd = () => {
@@ -41,13 +63,10 @@ export function GroupsList({
         newGroupName.trim(),
         newGroupDescription.trim() || undefined,
         isRecurring,
-        isRecurring ? parseInt(billingDay) : undefined
+        isRecurring ? parseInt(billingDay) : undefined,
+        selectedIcon
       );
-      setNewGroupName("");
-      setNewGroupDescription("");
-      setIsRecurring(false);
-      setBillingDay("1");
-      setShowForm(false);
+      resetForm();
     }
   };
 
@@ -57,6 +76,7 @@ export function GroupsList({
     setNewGroupDescription("");
     setIsRecurring(false);
     setBillingDay("1");
+    setSelectedIcon("Home");
   };
 
   return (
@@ -92,13 +112,43 @@ export function GroupsList({
               className="bg-background/80"
             />
 
-            {/* Toggle para grupo recorrente */}
+            {/* Seletor de ícone */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <Label className="font-medium">Ícone do grupo</Label>
+              </div>
+              <div className="grid grid-cols-8 gap-2">
+                {availableIcons.map((icon) => (
+                  <button
+                    key={icon.name}
+                    type="button"
+                    onClick={() => setSelectedIcon(icon.name)}
+                    className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+                      selectedIcon === icon.name
+                        ? "bg-primary text-primary-foreground shadow-md scale-110"
+                        : "bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/30"
+                    )}
+                    title={icon.label}
+                  >
+                    <LucideIcon name={icon.name} className="h-5 w-5" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Toggle para grupo recorrente com rótulo dinâmico */}
             <div className="bg-background/50 rounded-lg p-3 space-y-3 border border-border/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Repeat className="h-4 w-4 text-primary" />
+                  {isRecurring ? (
+                    <Repeat className="h-4 w-4 text-primary" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 text-muted-foreground" />
+                  )}
                   <Label htmlFor="recurring-toggle" className="font-medium cursor-pointer">
-                    Grupo recorrente
+                    {isRecurring ? "Grupo Recorrente" : "Grupo Único"}
                   </Label>
                 </div>
                 <Switch

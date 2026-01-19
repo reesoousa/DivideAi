@@ -17,12 +17,12 @@ export function useGroups() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
-  const addGroup = (name: string, description?: string, isRecurring: boolean = false, billingDay?: number) => {
+  const addGroup = (name: string, description?: string, isRecurring: boolean = false, billingDay?: number, icon?: string) => {
     const newGroup: Group = {
       id: crypto.randomUUID(),
       name,
       description,
-      icon: groupIcons[groups.length % groupIcons.length],
+      icon: icon || groupIcons[groups.length % groupIcons.length],
       color: groupColors[groups.length % groupColors.length],
       createdAt: new Date(),
       isRecurring,
