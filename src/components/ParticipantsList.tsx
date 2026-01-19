@@ -68,7 +68,7 @@ export function ParticipantsList({
   };
 
   return (
-    <Card>
+    <Card className="bg-card/70 backdrop-blur-xl border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
