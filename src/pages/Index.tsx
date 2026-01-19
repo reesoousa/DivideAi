@@ -9,10 +9,13 @@ import { ExpenseCharts } from "@/components/ExpenseCharts";
 import { TransparencyCard } from "@/components/TransparencyCard";
 import { CategorySummary } from "@/components/CategorySummary";
 import { useExpenseSplitter } from "@/hooks/useExpenseSplitter";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BottomNavItem } from "@/components/BottomNavItem";
 import { Users, Receipt, BarChart3, Calculator } from "lucide-react";
 
+type TabValue = "expenses" | "participants" | "charts" | "transparency";
+
 const Index = () => {
+  const [activeTab, setActiveTab] = useState<TabValue>("expenses");
   const {
     participants,
     expenses,
@@ -29,78 +32,55 @@ const Index = () => {
     removeExpense,
   } = useExpenseSplitter();
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main className="max-w-lg mx-auto px-4 py-6 pb-20">
-        <SummaryCard
-          totalExpenses={totalExpenses}
-          participantsCount={participants.length}
-        />
-
-        <Tabs defaultValue="expenses" className="mt-6">
-          <TabsList className="grid w-full grid-cols-4 mb-4">
-            <TabsTrigger value="expenses" className="text-xs">
-              <Receipt className="h-3 w-3 mr-1" />
-              Gastos
-            </TabsTrigger>
-            <TabsTrigger value="participants" className="text-xs">
-              <Users className="h-3 w-3 mr-1" />
-              Pessoas
-            </TabsTrigger>
-            <TabsTrigger value="charts" className="text-xs">
-              <BarChart3 className="h-3 w-3 mr-1" />
-              Gráficos
-            </TabsTrigger>
-            <TabsTrigger value="transparency" className="text-xs">
-              <Calculator className="h-3 w-3 mr-1" />
-              Cálculo
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="expenses" className="space-y-4 mt-0">
+  const renderContent = () => {
+    switch (activeTab) {
+      case "expenses":
+        return (
+          <div className="space-y-4">
             <AddExpenseForm
               participants={participants}
               onAddExpense={addExpense}
             />
-
             <ExpensesList
               expenses={expenses}
               participants={participants}
               onRemoveExpense={removeExpense}
             />
-
             <SettlementsList
               settlements={settlements}
               participants={participants}
             />
-          </TabsContent>
-
-          <TabsContent value="participants" className="space-y-4 mt-0">
+          </div>
+        );
+      case "participants":
+        return (
+          <div className="space-y-4">
             <ParticipantsList
               participants={participants}
               onAddParticipant={addParticipant}
               onUpdateParticipant={updateParticipant}
               onRemoveParticipant={removeParticipant}
             />
-          </TabsContent>
-
-          <TabsContent value="charts" className="space-y-4 mt-0">
+          </div>
+        );
+      case "charts":
+        return (
+          <div className="space-y-4">
             <CategorySummary
               expensesByCategory={expensesByCategory}
               totalExpenses={totalExpenses}
             />
-
             <ExpenseCharts
               expensesByCategory={expensesByCategory}
               expensesByMonth={expensesByMonth}
               expensesByParticipant={expensesByParticipant}
               participants={participants}
             />
-          </TabsContent>
-
-          <TabsContent value="transparency" className="space-y-4 mt-0">
+          </div>
+        );
+      case "transparency":
+        return (
+          <div className="space-y-4">
             <TransparencyCard
               participants={participants}
               expenses={expenses}
@@ -108,14 +88,63 @@ const Index = () => {
               settlements={settlements}
               totalExpenses={totalExpenses}
             />
-
             <SettlementsList
               settlements={settlements}
               participants={participants}
             />
-          </TabsContent>
-        </Tabs>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
+      <Header />
+      
+      <main className="max-w-lg mx-auto px-4 py-6 pb-28">
+        <SummaryCard
+          totalExpenses={totalExpenses}
+          participantsCount={participants.length}
+        />
+
+        <div className="mt-6">
+          {renderContent()}
+        </div>
       </main>
+
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50">
+        <div className="max-w-lg mx-auto px-4 pb-4">
+          <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg px-2 py-1">
+            <div className="flex items-center justify-around">
+              <BottomNavItem
+                icon={Receipt}
+                label="Gastos"
+                isActive={activeTab === "expenses"}
+                onClick={() => setActiveTab("expenses")}
+              />
+              <BottomNavItem
+                icon={Users}
+                label="Pessoas"
+                isActive={activeTab === "participants"}
+                onClick={() => setActiveTab("participants")}
+              />
+              <BottomNavItem
+                icon={BarChart3}
+                label="Métricas"
+                isActive={activeTab === "charts"}
+                onClick={() => setActiveTab("charts")}
+              />
+              <BottomNavItem
+                icon={Calculator}
+                label="Cálculo"
+                isActive={activeTab === "transparency"}
+                onClick={() => setActiveTab("transparency")}
+              />
+            </div>
+          </div>
+        </div>
+      </nav>
     </div>
   );
 };
