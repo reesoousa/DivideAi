@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { Trash2, Repeat } from "lucide-react";
 import { Expense, Participant } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCategoryIcon, getCategoryName } from "@/lib/categories";
@@ -10,6 +10,7 @@ interface ExpensesListProps {
   expenses: Expense[];
   participants: Participant[];
   onRemoveExpense: (id: string) => void;
+  isRecurringGroup?: boolean;
 }
 
 function formatCurrency(value: number): string {
@@ -23,6 +24,7 @@ export function ExpensesList({
   expenses,
   participants,
   onRemoveExpense,
+  isRecurringGroup = false,
 }: ExpensesListProps) {
   const getParticipantName = (id: string) => {
     return participants.find((p) => p.id === id)?.name || "Desconhecido";
@@ -32,15 +34,87 @@ export function ExpensesList({
     return null;
   }
 
+  // Separate recurring and regular expenses for display
+  const recurringExpenses = expenses.filter(e => e.isRecurring);
+  const regularExpenses = expenses.filter(e => !e.isRecurring);
+
   // Group expenses by category
-  const groupedExpenses = expenses.reduce((acc, expense) => {
-    const category = expense.category || "other";
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(expense);
-    return acc;
-  }, {} as Record<string, Expense[]>);
+  const groupExpensesByCategory = (expenseList: Expense[]) => {
+    return expenseList.reduce((acc, expense) => {
+      const category = expense.category || "other";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(expense);
+      return acc;
+    }, {} as Record<string, Expense[]>);
+  };
+
+  const groupedRegularExpenses = groupExpensesByCategory(regularExpenses);
+  const groupedRecurringExpenses = groupExpensesByCategory(recurringExpenses);
+
+  const renderExpenseItem = (expense: Expense, showRecurringBadge: boolean = false) => (
+    <div
+      key={expense.id}
+      className="flex items-center justify-between p-3 bg-accent rounded-lg ml-6"
+    >
+      <div className="flex items-center gap-3">
+        <ParticipantAvatar 
+          participant={getParticipantById(participants, expense.paidBy)} 
+          size="md"
+        />
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-foreground">{expense.description}</p>
+            {showRecurringBadge && expense.isRecurring && (
+              <Badge 
+                variant="outline" 
+                className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30"
+              >
+                <Repeat className="h-2.5 w-2.5 mr-0.5" />
+                Fixo
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Pago por {getParticipantName(expense.paidBy)}
+            {expense.splitAmong && expense.splitAmong.length > 0 && (
+              <span> • Dividido entre {expense.splitAmong.length} pessoas</span>
+            )}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="font-semibold text-primary">
+          {formatCurrency(expense.amount)}
+        </span>
+        {/* Don't show delete button for recurring expenses - they should be managed in the Fixos tab */}
+        {!expense.isRecurring && (
+          <button
+            onClick={() => onRemoveExpense(expense.id)}
+            className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderCategorySection = (category: string, categoryExpenses: Expense[], showRecurringBadge: boolean = false) => (
+    <div key={category} className="space-y-2">
+      <div className="flex items-center gap-2">
+        <LucideIcon name={getCategoryIcon(category)} className="h-5 w-5 text-muted-foreground" />
+        <span className="text-sm font-medium text-muted-foreground">
+          {getCategoryName(category)}
+        </span>
+        <Badge variant="secondary" className="text-xs">
+          {formatCurrency(categoryExpenses.reduce((sum, e) => sum + e.amount, 0))}
+        </Badge>
+      </div>
+      {categoryExpenses.map((expense) => renderExpenseItem(expense, showRecurringBadge))}
+    </div>
+  );
 
   return (
     <Card>
@@ -50,52 +124,28 @@ export function ExpensesList({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {Object.entries(groupedExpenses).map(([category, categoryExpenses]) => (
-          <div key={category} className="space-y-2">
-            <div className="flex items-center gap-2">
-              <LucideIcon name={getCategoryIcon(category)} className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">
-                {getCategoryName(category)}
-              </span>
-              <Badge variant="secondary" className="text-xs">
-                {formatCurrency(categoryExpenses.reduce((sum, e) => sum + e.amount, 0))}
-              </Badge>
+        {/* Recurring expenses section - only for recurring groups */}
+        {isRecurringGroup && recurringExpenses.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <Repeat className="h-4 w-4" />
+              Custos Fixos do Mês
             </div>
-            {categoryExpenses.map((expense) => (
-              <div
-                key={expense.id}
-                className="flex items-center justify-between p-3 bg-accent rounded-lg ml-6"
-              >
-                <div className="flex items-center gap-3">
-                  <ParticipantAvatar 
-                    participant={getParticipantById(participants, expense.paidBy)} 
-                    size="md"
-                  />
-                  <div>
-                    <p className="font-medium text-foreground">{expense.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Pago por {getParticipantName(expense.paidBy)}
-                      {expense.splitAmong && expense.splitAmong.length > 0 && (
-                        <span> • Dividido entre {expense.splitAmong.length} pessoas</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-primary">
-                    {formatCurrency(expense.amount)}
-                  </span>
-                  <button
-                    onClick={() => onRemoveExpense(expense.id)}
-                    className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
+            {Object.entries(groupedRecurringExpenses).map(([category, categoryExpenses]) => 
+              renderCategorySection(category, categoryExpenses, true)
+            )}
+            {regularExpenses.length > 0 && (
+              <div className="border-t border-border/50 pt-3 mt-3">
+                <p className="text-sm font-medium text-muted-foreground mb-2">Outros Gastos</p>
               </div>
-            ))}
+            )}
           </div>
-        ))}
+        )}
+
+        {/* Regular expenses section */}
+        {Object.entries(groupedRegularExpenses).map(([category, categoryExpenses]) => 
+          renderCategorySection(category, categoryExpenses, false)
+        )}
       </CardContent>
     </Card>
   );

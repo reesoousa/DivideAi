@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Participant, Expense, Settlement, BalanceDetail, Payment } from "@/types/expense";
+import { Participant, Expense, Settlement, BalanceDetail, Payment, RecurringItem } from "@/types/expense";
 
 // IMPORTANT: No white/light colors - all must be visible against light backgrounds
 const avatarColors = [
@@ -15,10 +15,32 @@ const avatarColors = [
   "bg-neutral-500",
 ];
 
-export function useExpenseSplitter() {
+export function useExpenseSplitter(recurringItems: RecurringItem[] = []) {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+
+  // Convert recurring items to expenses for unified calculations
+  const recurringExpenses: Expense[] = useMemo(() => {
+    return recurringItems
+      .filter(item => item.paidBy) // Only include items that have been assigned to someone
+      .map(item => ({
+        id: `recurring-${item.id}`,
+        description: item.name,
+        amount: item.status === 'partial' ? (item.paidAmount || 0) : item.amount,
+        paidBy: item.paidBy!,
+        category: item.category,
+        date: new Date(),
+        splitAmong: item.splitAmong,
+        isRecurring: true,
+        recurringItemId: item.id,
+      }));
+  }, [recurringItems]);
+
+  // Combine regular expenses with recurring expenses
+  const allExpenses = useMemo(() => {
+    return [...expenses, ...recurringExpenses];
+  }, [expenses, recurringExpenses]);
 
   const addParticipant = (
     name: string, 
@@ -74,36 +96,36 @@ export function useExpenseSplitter() {
   };
 
   const totalExpenses = useMemo(() => {
-    return expenses.reduce((sum, e) => sum + e.amount, 0);
-  }, [expenses]);
+    return allExpenses.reduce((sum, e) => sum + e.amount, 0);
+  }, [allExpenses]);
 
   const expensesByParticipant = useMemo(() => {
     const map: Record<string, number> = {};
     participants.forEach((p) => {
       map[p.id] = 0;
     });
-    expenses.forEach((e) => {
+    allExpenses.forEach((e) => {
       if (map[e.paidBy] !== undefined) {
         map[e.paidBy] += e.amount;
       }
     });
     return map;
-  }, [expenses, participants]);
+  }, [allExpenses, participants]);
 
   const expensesByCategory = useMemo(() => {
     const map: Record<string, number> = {};
-    expenses.forEach((e) => {
+    allExpenses.forEach((e) => {
       if (!map[e.category]) {
         map[e.category] = 0;
       }
       map[e.category] += e.amount;
     });
     return map;
-  }, [expenses]);
+  }, [allExpenses]);
 
   const expensesByMonth = useMemo(() => {
     const map: Record<string, number> = {};
-    expenses.forEach((e) => {
+    allExpenses.forEach((e) => {
       const date = new Date(e.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       if (!map[monthKey]) {
@@ -112,7 +134,7 @@ export function useExpenseSplitter() {
       map[monthKey] += e.amount;
     });
     return map;
-  }, [expenses]);
+  }, [allExpenses]);
 
   const balanceDetails = useMemo((): BalanceDetail[] => {
     if (participants.length === 0) return [];
@@ -125,7 +147,7 @@ export function useExpenseSplitter() {
       shouldPayMap[p.id] = 0;
     });
 
-    expenses.forEach(expense => {
+    allExpenses.forEach(expense => {
       const splitParticipants = expense.splitAmong && expense.splitAmong.length > 0
         ? expense.splitAmong
         : participants.map(p => p.id);
@@ -150,7 +172,7 @@ export function useExpenseSplitter() {
     });
 
     return details;
-  }, [participants, expenses, expensesByParticipant]);
+  }, [participants, allExpenses, expensesByParticipant]);
 
   const settlements = useMemo((): Settlement[] => {
     if (participants.length < 2) return [];
@@ -240,6 +262,7 @@ export function useExpenseSplitter() {
   return {
     participants,
     expenses,
+    allExpenses, // Combined regular + recurring expenses
     payments,
     totalExpenses,
     expensesByParticipant,

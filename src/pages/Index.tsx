@@ -38,8 +38,21 @@ const Index = () => {
   } = useGroups();
 
   const {
+    selectedMonth,
+    currentMonthItems,
+    monthlyTotals,
+    addRecurringItem,
+    removeRecurringItem,
+    updateItemStatus,
+    updateRecurringItem,
+    goToNextMonth,
+    goToPreviousMonth,
+  } = useRecurringItems();
+
+  const {
     participants,
     expenses,
+    allExpenses,
     payments,
     totalExpenses,
     expensesByParticipant,
@@ -55,19 +68,7 @@ const Index = () => {
     removeExpense,
     addPayment,
     removePayment,
-  } = useExpenseSplitter();
-
-  const {
-    selectedMonth,
-    currentMonthItems,
-    monthlyTotals,
-    addRecurringItem,
-    removeRecurringItem,
-    updateItemStatus,
-    updateRecurringItem,
-    goToNextMonth,
-    goToPreviousMonth,
-  } = useRecurringItems();
+  } = useExpenseSplitter(currentMonthItems);
 
   const isRecurringGroup = selectedGroup?.isRecurring ?? false;
 
@@ -81,9 +82,10 @@ const Index = () => {
               onAddExpense={addExpense}
             />
             <ExpensesList
-              expenses={expenses}
+              expenses={isRecurringGroup ? allExpenses : expenses}
               participants={participants}
               onRemoveExpense={removeExpense}
+              isRecurringGroup={isRecurringGroup}
             />
             <SettlementsWithPayments
               settlements={settlements}
@@ -94,7 +96,7 @@ const Index = () => {
             />
             <TransparencyCard
               participants={participants}
-              expenses={expenses}
+              expenses={isRecurringGroup ? allExpenses : expenses}
               balanceDetails={balanceDetails}
               settlements={settlements}
               totalExpenses={totalExpenses}

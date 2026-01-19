@@ -139,7 +139,7 @@ export function RecurringItemsList({
   };
 
   const handlePaymentSubmit = () => {
-    if (!paymentDialogItem) return;
+    if (!paymentDialogItem || !paymentBy) return; // paymentBy is now required
 
     const amount = parseFloat(paymentAmount);
     if (amount > 0) {
@@ -147,7 +147,7 @@ export function RecurringItemsList({
         paymentDialogItem.id,
         paymentStatus,
         paymentStatus === "partial" ? amount : paymentDialogItem.amount,
-        paymentBy || undefined
+        paymentBy
       );
     }
     setPaymentDialogItem(null);
@@ -280,80 +280,111 @@ export function RecurringItemsList({
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {items.map((item) => {
-              const status = statusConfig[item.status];
-              const StatusIcon = status.icon;
+          <>
+            {/* Info message about integration */}
+            {items.length > 0 && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-3">
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-primary">Dica:</span> Ao marcar um item como pago e informar quem pagou, ele aparecerá automaticamente na aba de <span className="font-medium">Gastos</span> e será incluído no <span className="font-medium">Acerto de Contas</span>.
+                </p>
+              </div>
+            )}
+            <div className="space-y-2">
+              {items.map((item) => {
+                const status = statusConfig[item.status];
+                const StatusIcon = status.icon;
+                const payer = participants.find(p => p.id === item.paidBy);
+                const isIncludedInSettlements = !!item.paidBy;
 
-              return (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-background/50 border border-border/30 group"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
-                    <LucideIcon
-                      name={categoryIcons[item.category] || "MoreHorizontal"}
-                      className="h-5 w-5 text-muted-foreground"
-                    />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-foreground truncate">
-                        {item.name}
-                      </p>
-                      <Badge
-                        variant="outline"
-                        className={cn("text-[10px] px-1.5 py-0", status.className)}
-                      >
-                        <StatusIcon className="h-3 w-3 mr-0.5" />
-                        {status.label}
-                      </Badge>
+                return (
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-xl border group",
+                      isIncludedInSettlements 
+                        ? "bg-emerald-500/5 border-emerald-500/20" 
+                        : "bg-background/50 border-border/30"
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
+                      <LucideIcon
+                        name={categoryIcons[item.category] || "MoreHorizontal"}
+                        className="h-5 w-5 text-muted-foreground"
+                      />
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {formatCurrency(item.amount)}
-                      {item.status === "partial" && item.paidAmount && (
-                        <span className="text-blue-600 ml-1">
-                          ({formatCurrency(item.paidAmount)} pago)
-                        </span>
-                      )}
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-1">
-                    {item.status !== "paid" && (
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-foreground truncate">
+                          {item.name}
+                        </p>
+                        <Badge
+                          variant="outline"
+                          className={cn("text-[10px] px-1.5 py-0", status.className)}
+                        >
+                          <StatusIcon className="h-3 w-3 mr-0.5" />
+                          {status.label}
+                        </Badge>
+                        {isIncludedInSettlements && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                          >
+                            <Check className="h-2.5 w-2.5 mr-0.5" />
+                            No acerto
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{formatCurrency(item.amount)}</span>
+                        {item.status === "partial" && item.paidAmount && (
+                          <span className="text-blue-600">
+                            ({formatCurrency(item.paidAmount)} pago)
+                          </span>
+                        )}
+                        {payer && (
+                          <span className="text-emerald-600">
+                            • Pago por {payer.name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {item.status !== "paid" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openPaymentDialog(item)}
+                        >
+                          <Check className="h-4 w-4 text-emerald-600" />
+                        </Button>
+                      )}
+                      {item.status === "paid" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => onUpdateStatus(item.id, "pending")}
+                        >
+                          <Clock className="h-4 w-4 text-amber-600" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
-                        onClick={() => openPaymentDialog(item)}
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => onRemoveItem(item.id)}
                       >
-                        <Check className="h-4 w-4 text-emerald-600" />
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
-                    )}
-                    {item.status === "paid" && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => onUpdateStatus(item.id, "pending")}
-                      >
-                        <Clock className="h-4 w-4 text-amber-600" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => onRemoveItem(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* Payment Dialog */}
@@ -404,11 +435,11 @@ export function RecurringItemsList({
               {participants.length > 0 && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">
-                    Pago por (opcional)
+                    Pago por <span className="text-destructive">*</span>
                   </p>
                   <Select value={paymentBy} onValueChange={setPaymentBy}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione..." />
+                    <SelectTrigger className={!paymentBy ? "border-destructive/50" : ""}>
+                      <SelectValue placeholder="Selecione quem pagou..." />
                     </SelectTrigger>
                     <SelectContent>
                       {participants.map((p) => (
@@ -418,11 +449,18 @@ export function RecurringItemsList({
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Obrigatório para incluir no acerto de contas
+                  </p>
                 </div>
               )}
 
               <div className="flex gap-2">
-                <Button onClick={handlePaymentSubmit} className="flex-1">
+                <Button 
+                  onClick={handlePaymentSubmit} 
+                  className="flex-1"
+                  disabled={!paymentBy || participants.length === 0}
+                >
                   Confirmar
                 </Button>
                 <Button
