@@ -23,6 +23,8 @@ export interface Expense {
   category: string;
   date: Date;
   splitAmong?: string[]; // If undefined, split among all
+  isRecurring?: boolean; // Indicates if this is a recurring fixed expense
+  recurringItemId?: string; // Reference to the original recurring item
 }
 
 export interface Settlement {
@@ -70,6 +72,7 @@ export interface RecurringItem {
   paidAmount?: number;
   paidBy?: string;
   dueDay?: number; // Dia do vencimento
+  splitAmong?: string[]; // Participantes que dividem o custo
 }
 
 export interface MonthlyRecurringData {
