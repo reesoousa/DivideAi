@@ -8,14 +8,28 @@ import { SettlementsList } from "@/components/SettlementsList";
 import { ExpenseCharts } from "@/components/ExpenseCharts";
 import { TransparencyCard } from "@/components/TransparencyCard";
 import { CategorySummary } from "@/components/CategorySummary";
+import { GroupsList } from "@/components/GroupsList";
 import { useExpenseSplitter } from "@/hooks/useExpenseSplitter";
+import { useGroups } from "@/hooks/useGroups";
 import { BottomNavItem } from "@/components/BottomNavItem";
-import { Users, Receipt, BarChart3, Calculator } from "lucide-react";
+import { Users, Receipt, BarChart3, Calculator, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type TabValue = "expenses" | "participants" | "charts" | "transparency";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<TabValue>("expenses");
+  
+  const {
+    groups,
+    selectedGroupId,
+    selectedGroup,
+    addGroup,
+    removeGroup,
+    selectGroup,
+    deselectGroup,
+  } = useGroups();
+
   const {
     participants,
     expenses,
@@ -97,9 +111,66 @@ const Index = () => {
     }
   };
 
+  // Groups selection view
+  if (!selectedGroupId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
+        <Header />
+        
+        <main className="max-w-lg mx-auto px-4 py-6">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-semibold text-foreground mb-1">
+              Bem-vindo ao SorocaLovers!
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Selecione ou crie um grupo para começar
+            </p>
+          </div>
+
+          <GroupsList
+            groups={groups}
+            onAddGroup={addGroup}
+            onRemoveGroup={removeGroup}
+            onSelectGroup={selectGroup}
+          />
+        </main>
+      </div>
+    );
+  }
+
+  // Group detail view with tabs
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
-      <Header />
+      {/* Custom header with back button */}
+      <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-40">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={deselectGroup}
+            className="h-9 w-9"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div
+              className={`w-10 h-10 rounded-xl ${selectedGroup?.color} flex items-center justify-center text-xl shadow-sm`}
+            >
+              {selectedGroup?.icon}
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-bold text-foreground truncate">
+                {selectedGroup?.name}
+              </h1>
+              {selectedGroup?.description && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {selectedGroup.description}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
       
       <main className="max-w-lg mx-auto px-4 py-6 pb-28">
         <SummaryCard

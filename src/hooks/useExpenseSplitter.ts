@@ -5,10 +5,10 @@ const avatarColors = [
   "bg-primary",
   "bg-secondary",
   "bg-chart-1",
-  "bg-chart-2",
-  "bg-muted",
   "bg-chart-4",
   "bg-chart-5",
+  "bg-chart-2",
+  "bg-accent-foreground",
 ];
 
 export function useExpenseSplitter() {
