@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Loader2, Mail, Lock, User, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Lock, User } from "lucide-react";
+import divideaiLogo from "@/assets/divideai-logo.png";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -100,11 +101,12 @@ export default function Auth() {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex flex-col">
       {/* Header */}
       <header className="px-4 py-6 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">DivideAí</h1>
+        <div className="flex items-center justify-center mb-2">
+          <img 
+            src={divideaiLogo} 
+            alt="DivideAí" 
+            className="h-8 w-auto"
+          />
         </div>
         <p className="text-muted-foreground text-sm">
           Divida despesas com simplicidade
