@@ -18,7 +18,7 @@ export function Header() {
         <img 
           src={divideaiLogo} 
           alt="DivideAí" 
-          className="h-7 w-auto"
+          className="h-5 w-auto"
         />
         
         {user && (
