@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { UserPlus, X, Edit2, Check } from "lucide-react";
+import { useState, useRef } from "react";
+import { UserPlus, X, Edit2, Check, Share2, Image, Palette } from "lucide-react";
 import { Participant } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,15 +10,36 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ParticipantsListProps {
   participants: Participant[];
-  onAddParticipant: (name: string, role?: string, participationPercentage?: number) => void;
+  onAddParticipant: (
+    name: string, 
+    role?: string, 
+    participationPercentage?: number,
+    avatarColor?: string,
+    avatarImage?: string
+  ) => void;
   onUpdateParticipant: (id: string, updates: Partial<Participant>) => void;
   onRemoveParticipant: (id: string) => void;
 }
+
+const avatarColorOptions = [
+  { value: "bg-primary", label: "Primária" },
+  { value: "bg-chart-1", label: "Gráfico 1" },
+  { value: "bg-chart-2", label: "Gráfico 2" },
+  { value: "bg-chart-3", label: "Gráfico 3" },
+  { value: "bg-chart-4", label: "Gráfico 4" },
+  { value: "bg-chart-5", label: "Gráfico 5" },
+  { value: "bg-slate-500", label: "Ardósia" },
+  { value: "bg-zinc-500", label: "Zinco" },
+  { value: "bg-stone-500", label: "Pedra" },
+  { value: "bg-neutral-500", label: "Neutro" },
+];
 
 export function ParticipantsList({
   participants,
@@ -29,15 +50,42 @@ export function ParticipantsList({
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
   const [editName, setEditName] = useState("");
   const [editRole, setEditRole] = useState("");
+  
+  // Avatar customization states
+  const [avatarTab, setAvatarTab] = useState<string>("color");
+  const [selectedColor, setSelectedColor] = useState(avatarColorOptions[0].value);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleAdd = () => {
     if (newName.trim()) {
-      onAddParticipant(newName.trim(), newRole.trim() || undefined);
+      onAddParticipant(
+        newName.trim(), 
+        newRole.trim() || undefined,
+        undefined,
+        avatarTab === "color" ? selectedColor : undefined,
+        avatarTab === "image" ? avatarPreview || undefined : undefined
+      );
       setNewName("");
       setNewRole("");
+      setAvatarPreview(null);
+      setSelectedColor(avatarColorOptions[0].value);
+      setAvatarTab("color");
       setIsDialogOpen(false);
     }
   };
@@ -58,6 +106,23 @@ export function ParticipantsList({
     }
   };
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Convite para grupo de gastos",
+          text: "Você foi convidado para participar de um grupo de divisão de gastos!",
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.log("Compartilhamento cancelado");
+      }
+    } else {
+      // Fallback: copiar link
+      navigator.clipboard.writeText(window.location.href);
+    }
+  };
+
   const getRoleLabel = (role?: string) => {
     const roles: Record<string, string> = {
       organizer: "Organizador",
@@ -65,6 +130,25 @@ export function ParticipantsList({
       guest: "Convidado",
     };
     return roles[role || ""] || role || "";
+  };
+
+  const renderAvatar = (participant: Participant) => {
+    if (participant.avatarType === 'image' && participant.avatarImage) {
+      return (
+        <img 
+          src={participant.avatarImage} 
+          alt={participant.name}
+          className="w-10 h-10 rounded-full object-cover"
+        />
+      );
+    }
+    return (
+      <div
+        className={`w-10 h-10 rounded-full ${participant.avatar} flex items-center justify-center text-primary-foreground text-sm font-medium`}
+      >
+        {participant.name.charAt(0).toUpperCase()}
+      </div>
+    );
   };
 
   return (
@@ -75,42 +159,162 @@ export function ParticipantsList({
             <UserPlus className="h-5 w-5 text-primary" />
             Participantes ({participants.length})
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <UserPlus className="h-4 w-4 mr-1" />
-                Adicionar
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Novo Participante</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome *</Label>
-                  <Input
-                    id="name"
-                    placeholder="Nome do participante"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Papel no grupo</Label>
-                  <Input
-                    id="role"
-                    placeholder="Ex: Organizador, Membro, Convidado"
-                    value={newRole}
-                    onChange={(e) => setNewRole(e.target.value)}
-                  />
-                </div>
-                <Button onClick={handleAdd} className="w-full" disabled={!newName.trim()}>
-                  Adicionar Participante
+          <div className="flex items-center gap-2">
+            {/* Botão Convidar */}
+            <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="ghost">
+                  <Share2 className="h-4 w-4 mr-1" />
+                  Convidar
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Convidar Participantes</DialogTitle>
+                  <DialogDescription>
+                    Compartilhe o link do grupo para convidar outras pessoas
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="bg-accent/50 rounded-lg p-4 text-sm text-muted-foreground">
+                    <p className="mb-3">
+                      Convide outras pessoas para participar deste grupo de divisão de gastos. 
+                      Cada participante poderá visualizar e cadastrar seus próprios gastos.
+                    </p>
+                    <div className="flex items-start gap-2 text-xs bg-warning/10 text-warning-foreground p-3 rounded-md border border-warning/20">
+                      <span className="font-semibold">⚠️ Em breve:</span>
+                      <span>
+                        O login e a sincronização na nuvem serão implementados futuramente. 
+                        Por enquanto, os dados são armazenados apenas localmente.
+                      </span>
+                    </div>
+                  </div>
+                  <Button onClick={handleShare} className="w-full">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Compartilhar Link
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Botão Adicionar */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  Adicionar
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Novo Participante</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome *</Label>
+                    <Input
+                      id="name"
+                      placeholder="Nome do participante"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Papel no grupo</Label>
+                    <Input
+                      id="role"
+                      placeholder="Ex: Organizador, Membro, Convidado"
+                      value={newRole}
+                      onChange={(e) => setNewRole(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Avatar Customization */}
+                  <div className="space-y-2">
+                    <Label>Avatar</Label>
+                    <Tabs value={avatarTab} onValueChange={setAvatarTab}>
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="color" className="flex items-center gap-1">
+                          <Palette className="h-4 w-4" />
+                          Cor
+                        </TabsTrigger>
+                        <TabsTrigger value="image" className="flex items-center gap-1">
+                          <Image className="h-4 w-4" />
+                          Foto
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="color" className="mt-3">
+                        <div className="grid grid-cols-5 gap-2">
+                          {avatarColorOptions.map((color) => (
+                            <button
+                              key={color.value}
+                              type="button"
+                              onClick={() => setSelectedColor(color.value)}
+                              className={`w-10 h-10 rounded-full ${color.value} flex items-center justify-center transition-all ${
+                                selectedColor === color.value 
+                                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background" 
+                                  : "hover:scale-110"
+                              }`}
+                            >
+                              {selectedColor === color.value && (
+                                <Check className="h-4 w-4 text-primary-foreground" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="image" className="mt-3">
+                        <div className="flex flex-col items-center gap-3">
+                          {avatarPreview ? (
+                            <div className="relative">
+                              <img 
+                                src={avatarPreview} 
+                                alt="Preview" 
+                                className="w-20 h-20 rounded-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setAvatarPreview(null)}
+                                className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-1"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div 
+                              onClick={() => fileInputRef.current?.click()}
+                              className="w-20 h-20 rounded-full bg-muted border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                            >
+                              <Image className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            {avatarPreview ? "Trocar foto" : "Escolher foto"}
+                          </Button>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+
+                  <Button onClick={handleAdd} className="w-full" disabled={!newName.trim()}>
+                    Adicionar Participante
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -146,11 +350,7 @@ export function ParticipantsList({
                 ) : (
                   <>
                     <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-full ${participant.avatar} flex items-center justify-center text-primary-foreground text-sm font-medium`}
-                      >
-                        {participant.name.charAt(0).toUpperCase()}
-                      </div>
+                      {renderAvatar(participant)}
                       <div>
                         <p className="font-medium text-foreground">{participant.name}</p>
                         {participant.role && (

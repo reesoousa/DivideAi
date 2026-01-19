@@ -2,6 +2,8 @@ export interface Participant {
   id: string;
   name: string;
   avatar: string;
+  avatarType: 'color' | 'image';
+  avatarImage?: string;
   role?: string;
   participationPercentage?: number;
 }
