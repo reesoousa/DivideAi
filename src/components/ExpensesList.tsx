@@ -3,6 +3,7 @@ import { Expense, Participant } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCategoryIcon, getCategoryName } from "@/lib/categories";
 import { Badge } from "@/components/ui/badge";
+import { ParticipantAvatar, getParticipantById } from "@/components/ParticipantAvatar";
 
 interface ExpensesListProps {
   expenses: Expense[];
@@ -24,10 +25,6 @@ export function ExpensesList({
 }: ExpensesListProps) {
   const getParticipantName = (id: string) => {
     return participants.find((p) => p.id === id)?.name || "Desconhecido";
-  };
-
-  const getParticipantAvatar = (id: string) => {
-    return participants.find((p) => p.id === id)?.avatar || "bg-muted";
   };
 
   if (expenses.length === 0) {
@@ -69,13 +66,10 @@ export function ExpensesList({
                 className="flex items-center justify-between p-3 bg-accent rounded-lg ml-6"
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`w-8 h-8 rounded-full ${getParticipantAvatar(
-                      expense.paidBy
-                    )} flex items-center justify-center text-primary-foreground text-sm font-medium`}
-                  >
-                    {getParticipantName(expense.paidBy).charAt(0).toUpperCase()}
-                  </div>
+                  <ParticipantAvatar 
+                    participant={getParticipantById(participants, expense.paidBy)} 
+                    size="md"
+                  />
                   <div>
                     <p className="font-medium text-foreground">{expense.description}</p>
                     <p className="text-xs text-muted-foreground">

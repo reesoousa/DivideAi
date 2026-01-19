@@ -13,10 +13,10 @@ import { PaymentHistory } from "@/components/PaymentHistory";
 import { useExpenseSplitter } from "@/hooks/useExpenseSplitter";
 import { useGroups } from "@/hooks/useGroups";
 import { BottomNavItem } from "@/components/BottomNavItem";
-import { Users, Receipt, BarChart3, Calculator, ArrowLeft, History } from "lucide-react";
+import { Users, Receipt, BarChart3, ArrowLeft, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type TabValue = "expenses" | "participants" | "charts" | "transparency" | "history";
+type TabValue = "expenses" | "participants" | "charts" | "history";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<TabValue>("expenses");
@@ -65,6 +65,20 @@ const Index = () => {
               participants={participants}
               onRemoveExpense={removeExpense}
             />
+            <SettlementsWithPayments
+              settlements={settlements}
+              remainingSettlements={remainingSettlements}
+              participants={participants}
+              payments={payments}
+              onAddPayment={addPayment}
+            />
+            <TransparencyCard
+              participants={participants}
+              expenses={expenses}
+              balanceDetails={balanceDetails}
+              settlements={settlements}
+              totalExpenses={totalExpenses}
+            />
           </div>
         );
       case "participants":
@@ -90,25 +104,6 @@ const Index = () => {
               expensesByMonth={expensesByMonth}
               expensesByParticipant={expensesByParticipant}
               participants={participants}
-            />
-          </div>
-        );
-      case "transparency":
-        return (
-          <div className="space-y-4">
-            <TransparencyCard
-              participants={participants}
-              expenses={expenses}
-              balanceDetails={balanceDetails}
-              settlements={settlements}
-              totalExpenses={totalExpenses}
-            />
-            <SettlementsWithPayments
-              settlements={settlements}
-              remainingSettlements={remainingSettlements}
-              participants={participants}
-              payments={payments}
-              onAddPayment={addPayment}
             />
           </div>
         );
@@ -219,12 +214,6 @@ const Index = () => {
                 label="Métricas"
                 isActive={activeTab === "charts"}
                 onClick={() => setActiveTab("charts")}
-              />
-              <BottomNavItem
-                icon={Calculator}
-                label="Cálculo"
-                isActive={activeTab === "transparency"}
-                onClick={() => setActiveTab("transparency")}
               />
               <BottomNavItem
                 icon={History}
