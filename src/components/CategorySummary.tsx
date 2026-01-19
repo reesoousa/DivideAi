@@ -2,6 +2,7 @@ import { Tag } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { getCategoryIcon, getCategoryName, getCategoryColor } from "@/lib/categories";
+import { LucideIcon } from "@/components/LucideIcon";
 
 interface CategorySummaryProps {
   expensesByCategory: Record<string, number>;
@@ -43,7 +44,7 @@ export function CategorySummary({
             <div key={categoryId} className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{getCategoryIcon(categoryId)}</span>
+                  <LucideIcon name={getCategoryIcon(categoryId)} className="h-5 w-5 text-muted-foreground" />
                   <span className="text-sm font-medium">{getCategoryName(categoryId)}</span>
                 </div>
                 <div className="text-right">

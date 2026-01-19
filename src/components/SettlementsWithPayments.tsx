@@ -110,9 +110,10 @@ export function SettlementsWithPayments({
         </CardHeader>
         <CardContent>
           {settlements.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-4">
-              Tudo certo! Ninguém deve nada a ninguém 🎉
-            </p>
+            <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
+              <CheckCircle2 className="h-8 w-8 mb-2 text-primary" />
+              <p className="text-sm text-center">Tudo certo! Ninguém deve nada a ninguém</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {settlements.map((settlement, index) => {

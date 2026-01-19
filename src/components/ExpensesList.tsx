@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCategoryIcon, getCategoryName } from "@/lib/categories";
 import { Badge } from "@/components/ui/badge";
 import { ParticipantAvatar, getParticipantById } from "@/components/ParticipantAvatar";
+import { LucideIcon } from "@/components/LucideIcon";
 
 interface ExpensesListProps {
   expenses: Expense[];
@@ -52,7 +53,7 @@ export function ExpensesList({
         {Object.entries(groupedExpenses).map(([category, categoryExpenses]) => (
           <div key={category} className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-lg">{getCategoryIcon(category)}</span>
+              <LucideIcon name={getCategoryIcon(category)} className="h-5 w-5 text-muted-foreground" />
               <span className="text-sm font-medium text-muted-foreground">
                 {getCategoryName(category)}
               </span>

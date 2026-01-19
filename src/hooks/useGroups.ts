@@ -10,7 +10,8 @@ const groupColors = [
   "bg-chart-5",
 ];
 
-const groupIcons = ["🏠", "✈️", "🎉", "💼", "🍽️", "🎮", "🏖️", "🚗"];
+// Lucide icon names instead of emojis
+const groupIcons = ["Home", "Plane", "PartyPopper", "Briefcase", "UtensilsCrossed", "Gamepad2", "Palmtree", "Car"];
 
 export function useGroups() {
   const [groups, setGroups] = useState<Group[]>([]);

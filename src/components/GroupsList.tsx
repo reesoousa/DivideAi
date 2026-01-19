@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2, ChevronRight, FolderOpen } from "lucide-react";
+import { LucideIcon } from "@/components/LucideIcon";
 
 interface GroupsListProps {
   groups: Group[];
@@ -97,9 +98,9 @@ export function GroupsList({
                 onClick={() => onSelectGroup(group.id)}
               >
                 <div
-                  className={`w-12 h-12 rounded-xl ${group.color} flex items-center justify-center text-2xl shadow-sm`}
+                  className={`w-12 h-12 rounded-xl ${group.color} flex items-center justify-center shadow-sm`}
                 >
-                  {group.icon}
+                  <LucideIcon name={group.icon} className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-foreground truncate">
