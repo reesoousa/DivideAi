@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { defaultCategories } from "@/lib/categories";
+import { LucideIcon } from "@/components/LucideIcon";
 
 interface AddExpenseFormProps {
   participants: Participant[];
@@ -97,7 +98,7 @@ export function AddExpenseForm({
                 {defaultCategories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     <span className="flex items-center gap-2">
-                      <span>{cat.icon}</span>
+                      <LucideIcon name={cat.icon} className="h-4 w-4" />
                       <span>{cat.name}</span>
                     </span>
                   </SelectItem>

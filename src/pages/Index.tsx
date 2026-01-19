@@ -15,6 +15,7 @@ import { useGroups } from "@/hooks/useGroups";
 import { BottomNavItem } from "@/components/BottomNavItem";
 import { Users, Receipt, BarChart3, ArrowLeft, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LucideIcon } from "@/components/LucideIcon";
 
 type TabValue = "expenses" | "participants" | "charts" | "history";
 
@@ -163,9 +164,11 @@ const Index = () => {
           </Button>
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div
-              className={`w-10 h-10 rounded-xl ${selectedGroup?.color} flex items-center justify-center text-xl shadow-sm`}
+              className={`w-10 h-10 rounded-xl ${selectedGroup?.color} flex items-center justify-center shadow-sm`}
             >
-              {selectedGroup?.icon}
+              {selectedGroup?.icon && (
+                <LucideIcon name={selectedGroup.icon} className="h-5 w-5 text-primary-foreground" />
+              )}
             </div>
             <div className="min-w-0">
               <h1 className="font-bold text-foreground truncate">

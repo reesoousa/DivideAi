@@ -46,7 +46,8 @@ export function ExpenseCharts({
     return Object.entries(expensesByCategory)
       .filter(([_, value]) => value > 0)
       .map(([category, value], index) => ({
-        name: `${getCategoryIcon(category)} ${getCategoryName(category)}`,
+        name: getCategoryName(category),
+        iconName: getCategoryIcon(category),
         value,
         fill: CHART_COLORS[index % CHART_COLORS.length],
       }));
