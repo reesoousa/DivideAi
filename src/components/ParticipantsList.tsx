@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { UserPlus, X, Edit2, Check, Share2, Image, Palette } from "lucide-react";
+import { UserPlus, X, Edit2, Check, Share2, Image, Palette, Plus } from "lucide-react";
 import { Participant } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,17 +28,15 @@ interface ParticipantsListProps {
   onRemoveParticipant: (id: string) => void;
 }
 
+// 7 cores pré-definidas + opção de color picker
 const avatarColorOptions = [
-  { value: "bg-primary", label: "Primária" },
-  { value: "bg-chart-1", label: "Gráfico 1" },
-  { value: "bg-chart-2", label: "Gráfico 2" },
-  { value: "bg-chart-3", label: "Gráfico 3" },
-  { value: "bg-chart-4", label: "Gráfico 4" },
-  { value: "bg-chart-5", label: "Gráfico 5" },
-  { value: "bg-slate-500", label: "Ardósia" },
-  { value: "bg-zinc-500", label: "Zinco" },
-  { value: "bg-stone-500", label: "Pedra" },
-  { value: "bg-neutral-500", label: "Neutro" },
+  { value: "#E57373", label: "Vermelho" },
+  { value: "#64B5F6", label: "Azul" },
+  { value: "#81C784", label: "Verde" },
+  { value: "#FFD54F", label: "Amarelo" },
+  { value: "#BA68C8", label: "Roxo" },
+  { value: "#4DB6AC", label: "Teal" },
+  { value: "#A1887F", label: "Marrom" },
 ];
 
 export function ParticipantsList({
@@ -58,7 +56,10 @@ export function ParticipantsList({
   // Avatar customization states
   const [avatarTab, setAvatarTab] = useState<string>("color");
   const [selectedColor, setSelectedColor] = useState(avatarColorOptions[0].value);
+  const [customColor, setCustomColor] = useState("#6B7280");
+  const [useCustomColor, setUseCustomColor] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const colorPickerRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,17 +75,22 @@ export function ParticipantsList({
 
   const handleAdd = () => {
     if (newName.trim()) {
+      const finalColor = avatarTab === "color" 
+        ? (useCustomColor ? customColor : selectedColor) 
+        : undefined;
+      
       onAddParticipant(
         newName.trim(), 
         newRole.trim() || undefined,
         undefined,
-        avatarTab === "color" ? selectedColor : undefined,
+        finalColor,
         avatarTab === "image" ? avatarPreview || undefined : undefined
       );
       setNewName("");
       setNewRole("");
       setAvatarPreview(null);
       setSelectedColor(avatarColorOptions[0].value);
+      setUseCustomColor(false);
       setAvatarTab("color");
       setIsDialogOpen(false);
     }
@@ -142,9 +148,15 @@ export function ParticipantsList({
         />
       );
     }
+    // Check if avatar is a hex color or a Tailwind class
+    const isHexColor = participant.avatar?.startsWith('#');
+    
     return (
       <div
-        className={`w-10 h-10 rounded-full ${participant.avatar} flex items-center justify-center text-primary-foreground text-sm font-medium`}
+        className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
+          isHexColor ? 'text-white' : `${participant.avatar} text-primary-foreground`
+        }`}
+        style={isHexColor ? { backgroundColor: participant.avatar } : undefined}
       >
         {participant.name.charAt(0).toUpperCase()}
       </div>
@@ -176,19 +188,9 @@ export function ParticipantsList({
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                  <div className="bg-accent/50 rounded-lg p-4 text-sm text-muted-foreground">
-                    <p className="mb-3">
-                      Convide outras pessoas para participar deste grupo de divisão de gastos. 
-                      Cada participante poderá visualizar e cadastrar seus próprios gastos.
-                    </p>
-                    <div className="flex items-start gap-2 text-xs bg-warning/10 text-warning-foreground p-3 rounded-md border border-warning/20">
-                      <span className="font-semibold">⚠️ Em breve:</span>
-                      <span>
-                        O login e a sincronização na nuvem serão implementados futuramente. 
-                        Por enquanto, os dados são armazenados apenas localmente.
-                      </span>
-                    </div>
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Convide pessoas para cadastrar gastos neste grupo. Login e sincronização em breve.
+                  </p>
                   <Button onClick={handleShare} className="w-full">
                     <Share2 className="h-4 w-4 mr-2" />
                     Compartilhar Link
@@ -244,23 +246,57 @@ export function ParticipantsList({
                         </TabsTrigger>
                       </TabsList>
                       <TabsContent value="color" className="mt-3">
-                        <div className="grid grid-cols-5 gap-2">
+                        <div className="flex flex-wrap gap-2">
                           {avatarColorOptions.map((color) => (
                             <button
                               key={color.value}
                               type="button"
-                              onClick={() => setSelectedColor(color.value)}
-                              className={`w-10 h-10 rounded-full ${color.value} flex items-center justify-center transition-all ${
-                                selectedColor === color.value 
+                              onClick={() => {
+                                setSelectedColor(color.value);
+                                setUseCustomColor(false);
+                              }}
+                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                                selectedColor === color.value && !useCustomColor
                                   ? "ring-2 ring-primary ring-offset-2 ring-offset-background" 
                                   : "hover:scale-110"
                               }`}
+                              style={{ backgroundColor: color.value }}
                             >
-                              {selectedColor === color.value && (
-                                <Check className="h-4 w-4 text-primary-foreground" />
+                              {selectedColor === color.value && !useCustomColor && (
+                                <Check className="h-4 w-4 text-white" />
                               )}
                             </button>
                           ))}
+                          {/* Color Picker option */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUseCustomColor(true);
+                              colorPickerRef.current?.click();
+                            }}
+                            className={`w-10 h-10 rounded-full border-2 border-dashed border-border flex items-center justify-center transition-all ${
+                              useCustomColor
+                                ? "ring-2 ring-primary ring-offset-2 ring-offset-background" 
+                                : "hover:scale-110 hover:border-primary"
+                            }`}
+                            style={useCustomColor ? { backgroundColor: customColor } : undefined}
+                          >
+                            {useCustomColor ? (
+                              <Check className="h-4 w-4 text-white" />
+                            ) : (
+                              <Plus className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </button>
+                          <input
+                            ref={colorPickerRef}
+                            type="color"
+                            value={customColor}
+                            onChange={(e) => {
+                              setCustomColor(e.target.value);
+                              setUseCustomColor(true);
+                            }}
+                            className="hidden"
+                          />
                         </div>
                       </TabsContent>
                       <TabsContent value="image" className="mt-3">
