@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Participant, Expense, Settlement } from "@/types/expense";
+import { Participant, Expense, Settlement, BalanceDetail } from "@/types/expense";
 
 const avatarColors = [
   "bg-primary",
@@ -13,13 +13,21 @@ export function useExpenseSplitter() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
-  const addParticipant = (name: string) => {
+  const addParticipant = (name: string, role?: string, participationPercentage?: number) => {
     const newParticipant: Participant = {
       id: crypto.randomUUID(),
       name,
       avatar: avatarColors[participants.length % avatarColors.length],
+      role,
+      participationPercentage: participationPercentage || 100,
     };
     setParticipants([...participants, newParticipant]);
+  };
+
+  const updateParticipant = (id: string, updates: Partial<Participant>) => {
+    setParticipants(participants.map((p) => 
+      p.id === id ? { ...p, ...updates } : p
+    ));
   };
 
   const removeParticipant = (id: string) => {
@@ -27,13 +35,21 @@ export function useExpenseSplitter() {
     setExpenses(expenses.filter((e) => e.paidBy !== id));
   };
 
-  const addExpense = (description: string, amount: number, paidBy: string) => {
+  const addExpense = (
+    description: string, 
+    amount: number, 
+    paidBy: string, 
+    category: string = "other",
+    splitAmong?: string[]
+  ) => {
     const newExpense: Expense = {
       id: crypto.randomUUID(),
       description,
       amount,
       paidBy,
+      category,
       date: new Date(),
+      splitAmong,
     };
     setExpenses([...expenses, newExpense]);
   };
@@ -59,15 +75,74 @@ export function useExpenseSplitter() {
     return map;
   }, [expenses, participants]);
 
-  const settlements = useMemo((): Settlement[] => {
-    if (participants.length < 2) return [];
+  const expensesByCategory = useMemo(() => {
+    const map: Record<string, number> = {};
+    expenses.forEach((e) => {
+      if (!map[e.category]) {
+        map[e.category] = 0;
+      }
+      map[e.category] += e.amount;
+    });
+    return map;
+  }, [expenses]);
 
-    const perPerson = totalExpenses / participants.length;
-    const balances: Record<string, number> = {};
+  const expensesByMonth = useMemo(() => {
+    const map: Record<string, number> = {};
+    expenses.forEach((e) => {
+      const date = new Date(e.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!map[monthKey]) {
+        map[monthKey] = 0;
+      }
+      map[monthKey] += e.amount;
+    });
+    return map;
+  }, [expenses]);
+
+  const balanceDetails = useMemo((): BalanceDetail[] => {
+    if (participants.length === 0) return [];
+
+    const details: BalanceDetail[] = [];
+    
+    // Calculate what each person should pay based on expenses they're part of
+    const shouldPayMap: Record<string, number> = {};
+    participants.forEach(p => {
+      shouldPayMap[p.id] = 0;
+    });
+
+    expenses.forEach(expense => {
+      const splitParticipants = expense.splitAmong && expense.splitAmong.length > 0
+        ? expense.splitAmong
+        : participants.map(p => p.id);
+      
+      const perPerson = expense.amount / splitParticipants.length;
+      splitParticipants.forEach(id => {
+        if (shouldPayMap[id] !== undefined) {
+          shouldPayMap[id] += perPerson;
+        }
+      });
+    });
 
     participants.forEach((p) => {
       const paid = expensesByParticipant[p.id] || 0;
-      balances[p.id] = paid - perPerson;
+      const shouldPay = shouldPayMap[p.id] || 0;
+      details.push({
+        participantId: p.id,
+        paid,
+        shouldPay,
+        balance: paid - shouldPay,
+      });
+    });
+
+    return details;
+  }, [participants, expenses, expensesByParticipant]);
+
+  const settlements = useMemo((): Settlement[] => {
+    if (participants.length < 2) return [];
+
+    const balances: Record<string, number> = {};
+    balanceDetails.forEach((detail) => {
+      balances[detail.participantId] = detail.balance;
     });
 
     const debtors: { id: string; amount: number }[] = [];
@@ -100,15 +175,19 @@ export function useExpenseSplitter() {
     });
 
     return result;
-  }, [participants, totalExpenses, expensesByParticipant]);
+  }, [participants, balanceDetails]);
 
   return {
     participants,
     expenses,
     totalExpenses,
     expensesByParticipant,
+    expensesByCategory,
+    expensesByMonth,
+    balanceDetails,
     settlements,
     addParticipant,
+    updateParticipant,
     removeParticipant,
     addExpense,
     removeExpense,

@@ -1,6 +1,8 @@
 import { Trash2 } from "lucide-react";
 import { Expense, Participant } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getCategoryIcon, getCategoryName } from "@/lib/categories";
+import { Badge } from "@/components/ui/badge";
 
 interface ExpensesListProps {
   expenses: Expense[];
@@ -32,43 +34,71 @@ export function ExpensesList({
     return null;
   }
 
+  // Group expenses by category
+  const groupedExpenses = expenses.reduce((acc, expense) => {
+    const category = expense.category || "other";
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(expense);
+    return acc;
+  }, {} as Record<string, Expense[]>);
+
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Gastos Registrados</CardTitle>
+        <CardTitle className="text-lg">
+          Gastos Registrados ({expenses.length})
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {expenses.map((expense) => (
-          <div
-            key={expense.id}
-            className="flex items-center justify-between p-3 bg-accent rounded-lg"
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-8 h-8 rounded-full ${getParticipantAvatar(
-                  expense.paidBy
-                )} flex items-center justify-center text-primary-foreground text-sm font-medium`}
-              >
-                {getParticipantName(expense.paidBy).charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p className="font-medium text-foreground">{expense.description}</p>
-                <p className="text-sm text-muted-foreground">
-                  Pago por {getParticipantName(expense.paidBy)}
-                </p>
-              </div>
-            </div>
+      <CardContent className="space-y-4">
+        {Object.entries(groupedExpenses).map(([category, categoryExpenses]) => (
+          <div key={category} className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-primary">
-                {formatCurrency(expense.amount)}
+              <span className="text-lg">{getCategoryIcon(category)}</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                {getCategoryName(category)}
               </span>
-              <button
-                onClick={() => onRemoveExpense(expense.id)}
-                className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <Badge variant="secondary" className="text-xs">
+                {formatCurrency(categoryExpenses.reduce((sum, e) => sum + e.amount, 0))}
+              </Badge>
             </div>
+            {categoryExpenses.map((expense) => (
+              <div
+                key={expense.id}
+                className="flex items-center justify-between p-3 bg-accent rounded-lg ml-6"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-8 h-8 rounded-full ${getParticipantAvatar(
+                      expense.paidBy
+                    )} flex items-center justify-center text-primary-foreground text-sm font-medium`}
+                  >
+                    {getParticipantName(expense.paidBy).charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{expense.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Pago por {getParticipantName(expense.paidBy)}
+                      {expense.splitAmong && expense.splitAmong.length > 0 && (
+                        <span> • Dividido entre {expense.splitAmong.length} pessoas</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-primary">
+                    {formatCurrency(expense.amount)}
+                  </span>
+                  <button
+                    onClick={() => onRemoveExpense(expense.id)}
+                    className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         ))}
       </CardContent>
