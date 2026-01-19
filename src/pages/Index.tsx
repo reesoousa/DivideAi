@@ -129,7 +129,7 @@ const Index = () => {
         <main className="max-w-lg mx-auto px-4 py-6">
           <div className="text-center mb-6">
             <h2 className="text-xl font-semibold text-foreground mb-1">
-              Bem-vindo ao SorocaLovers!
+              Bem-vindo ao DivideAí!
             </h2>
             <p className="text-sm text-muted-foreground">
               Selecione ou crie um grupo para começar
