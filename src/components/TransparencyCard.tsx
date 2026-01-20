@@ -185,9 +185,9 @@ export function TransparencyCard({
                       {settlements.map((settlement, index) => (
                         <div 
                           key={index} 
-                          className="flex items-center justify-between p-3 bg-background rounded-lg"
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-background rounded-lg"
                         >
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex items-center gap-2 text-sm flex-wrap">
                             <span className="font-medium text-red-500">
                               {getParticipantName(settlement.from)}
                             </span>
@@ -196,7 +196,7 @@ export function TransparencyCard({
                               {getParticipantName(settlement.to)}
                             </span>
                           </div>
-                          <span className="font-bold text-primary">
+                          <span className="font-bold text-primary whitespace-nowrap">
                             {formatCurrency(settlement.amount)}
                           </span>
                         </div>

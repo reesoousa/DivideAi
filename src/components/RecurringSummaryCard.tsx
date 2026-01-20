@@ -27,24 +27,24 @@ export function RecurringSummaryCard({
 
   return (
     <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
-      <CardContent className="pt-5 pb-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-              <Repeat className="h-5 w-5 text-primary" />
+      <CardContent className="pt-4 sm:pt-5 pb-4">
+        <div className="flex items-center justify-between mb-4 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <Repeat className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Custos Fixos</p>
-              <p className="text-xl font-bold text-foreground">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-muted-foreground">Custos Fixos</p>
+              <p className="text-lg sm:text-xl font-bold text-foreground truncate">
                 {formatCurrency(totalMonthly)}
               </p>
             </div>
           </div>
 
           {billingDay && (
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <CalendarDays className="h-4 w-4" />
-              <span className="text-sm">Dia {billingDay}</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground flex-shrink-0">
+              <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="text-xs sm:text-sm">Dia {billingDay}</span>
             </div>
           )}
         </div>
@@ -63,33 +63,33 @@ export function RecurringSummaryCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 text-emerald-600 mb-1">
-              <TrendingUp className="h-3.5 w-3.5" />
+              <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </div>
-            <p className="text-xs text-muted-foreground">Pago</p>
-            <p className="font-semibold text-sm text-emerald-600">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Pago</p>
+            <p className="font-semibold text-xs sm:text-sm text-emerald-600 truncate">
               {formatCurrency(paidAmount)}
             </p>
           </div>
 
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 text-amber-600 mb-1">
-              <Repeat className="h-3.5 w-3.5" />
+              <Repeat className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </div>
-            <p className="text-xs text-muted-foreground">Pendente</p>
-            <p className="font-semibold text-sm text-amber-600">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Pendente</p>
+            <p className="font-semibold text-xs sm:text-sm text-amber-600 truncate">
               {formatCurrency(pendingAmount)}
             </p>
           </div>
 
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 text-primary mb-1">
-              <Users className="h-3.5 w-3.5" />
+              <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </div>
-            <p className="text-xs text-muted-foreground">Pessoas</p>
-            <p className="font-semibold text-sm">{participantsCount}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Pessoas</p>
+            <p className="font-semibold text-xs sm:text-sm">{participantsCount}</p>
           </div>
         </div>
       </CardContent>
