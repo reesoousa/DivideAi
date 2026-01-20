@@ -1,6 +1,7 @@
 import { LogOut, User, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -11,17 +12,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
-import divideaiLogo from "@/assets/divideai-logo.png";
+import divideaiLogoLight from "@/assets/divideai-logo.png";
+import divideaiLogoDark from "@/assets/divideai-logo-dark.png";
 import { useEffect, useState } from "react";
 
 export function Header() {
   const { user, signOut } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{
     display_name: string | null;
     avatar_url: string | null;
     avatar_color: string | null;
   } | null>(null);
+
+  // Determine if dark mode is active
+  const isDarkMode = settings.theme === "dark" || 
+    (settings.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   useEffect(() => {
     if (user) {
@@ -52,7 +59,7 @@ export function Header() {
     <header className="bg-card/70 backdrop-blur-xl border-b border-border/50 px-4 py-4 sticky top-0 z-40">
       <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
         <img 
-          src={divideaiLogo} 
+          src={isDarkMode ? divideaiLogoDark : divideaiLogoLight} 
           alt="DivideAí" 
           className="h-5 w-auto"
         />

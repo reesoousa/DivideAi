@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./AuthContext";
 
 export type Language = "pt-BR" | "en-US" | "es-ES";
 export type Currency = "BRL" | "USD" | "EUR";
@@ -24,8 +26,10 @@ interface SettingsContextType {
   settings: AppSettings;
   updateSettings: (updates: Partial<AppSettings>) => void;
   updateNotifications: (updates: Partial<NotificationSettings>) => void;
+  updateTheme: (theme: ThemeMode) => Promise<void>;
   formatCurrency: (value: number) => string;
   formatDate: (date: Date) => string;
+  isLoadingTheme: boolean;
 }
 
 // Zod schema for settings validation
@@ -90,17 +94,73 @@ function loadSettingsFromStorage(): AppSettings {
   }
 }
 
+// Apply theme to document
+function applyTheme(theme: ThemeMode) {
+  const root = window.document.documentElement;
+  root.classList.remove("light", "dark");
+
+  if (theme === "system") {
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    root.classList.add(systemTheme);
+  } else {
+    root.classList.add(theme);
+  }
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [settings, setSettings] = useState<AppSettings>(loadSettingsFromStorage);
+  const [isLoadingTheme, setIsLoadingTheme] = useState(true);
 
-  // Always apply light theme
+  // Load theme preference from database when user is authenticated
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add("light");
-  }, []);
+    const loadThemeFromDatabase = async () => {
+      if (!user) {
+        setIsLoadingTheme(false);
+        applyTheme(settings.theme);
+        return;
+      }
 
-  // Persist settings
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("theme_preference")
+          .eq("user_id", user.id)
+          .single();
+
+        if (error) {
+          console.error("Error loading theme preference:", error);
+          applyTheme(settings.theme);
+        } else if (data?.theme_preference) {
+          const theme = data.theme_preference as ThemeMode;
+          setSettings(prev => ({ ...prev, theme }));
+          applyTheme(theme);
+        } else {
+          applyTheme(settings.theme);
+        }
+      } catch (err) {
+        console.error("Error loading theme:", err);
+        applyTheme(settings.theme);
+      } finally {
+        setIsLoadingTheme(false);
+      }
+    };
+
+    loadThemeFromDatabase();
+  }, [user]);
+
+  // Listen for system theme changes when in system mode
+  useEffect(() => {
+    if (settings.theme !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = () => applyTheme("system");
+    
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [settings.theme]);
+
+  // Persist settings to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
@@ -115,6 +175,28 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       notifications: { ...prev.notifications, ...updates },
     }));
   };
+
+  const updateTheme = useCallback(async (theme: ThemeMode) => {
+    // Apply theme immediately for instant feedback
+    applyTheme(theme);
+    setSettings(prev => ({ ...prev, theme }));
+
+    // Save to database if user is authenticated
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ theme_preference: theme })
+          .eq("user_id", user.id);
+
+        if (error) {
+          console.error("Error saving theme preference:", error);
+        }
+      } catch (err) {
+        console.error("Error saving theme:", err);
+      }
+    }
+  }, [user]);
 
   const formatCurrency = (value: number): string => {
     const localeMap: Record<Currency, string> = {
@@ -153,8 +235,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         settings,
         updateSettings,
         updateNotifications,
+        updateTheme,
         formatCurrency,
         formatDate,
+        isLoadingTheme,
       }}
     >
       {children}
