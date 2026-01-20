@@ -104,6 +104,29 @@ export function useSupabaseGroups() {
 
       if (error) throw error;
 
+      // Get user profile for participant creation
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url, avatar_color")
+        .eq("user_id", user.id)
+        .single();
+
+      // Auto-create participant for the group owner
+      const participantName = profile?.display_name || user.email?.split('@')[0] || 'Admin';
+      
+      await supabase
+        .from("participants")
+        .insert({
+          group_id: data.id,
+          user_id: user.id,
+          name: participantName,
+          avatar_type: profile?.avatar_url ? "image" : "color",
+          avatar_image: profile?.avatar_url || null,
+          avatar_color: profile?.avatar_color || "#64B5F6",
+          participation_percentage: 100,
+          role: "Administrador",
+        });
+
       const mappedGroup: Group = {
         id: data.id,
         name: data.name,

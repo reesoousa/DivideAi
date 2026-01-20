@@ -16,6 +16,7 @@ export interface Participant {
   role?: string;
   participationPercentage?: number;
   pixKeys?: PixKey[];
+  userId?: string; // Linked user ID for authenticated participants
 }
 
 export interface ExpenseCategory {
