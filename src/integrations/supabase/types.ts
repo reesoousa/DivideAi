@@ -14,6 +14,239 @@ export type Database = {
   }
   public: {
     Tables: {
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          description: string
+          group_id: string
+          id: string
+          notes: string | null
+          paid_by_id: string
+          split_among: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          date?: string
+          description: string
+          group_id: string
+          id?: string
+          notes?: string | null
+          paid_by_id: string
+          split_among?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string
+          group_id?: string
+          id?: string
+          notes?: string | null
+          paid_by_id?: string
+          split_among?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_paid_by_id_fkey"
+            columns: ["paid_by_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          billing_day: number | null
+          color: string
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_recurring: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_day?: number | null
+          color?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_recurring?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_day?: number | null
+          color?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_recurring?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      participants: {
+        Row: {
+          avatar_color: string | null
+          avatar_image: string | null
+          avatar_type: string
+          created_at: string
+          group_id: string
+          id: string
+          name: string
+          participation_percentage: number | null
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_color?: string | null
+          avatar_image?: string | null
+          avatar_type?: string
+          created_at?: string
+          group_id: string
+          id?: string
+          name: string
+          participation_percentage?: number | null
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_color?: string | null
+          avatar_image?: string | null
+          avatar_type?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          name?: string
+          participation_percentage?: number | null
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participants_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          from_participant_id: string
+          group_id: string
+          id: string
+          notes: string | null
+          receipt_url: string | null
+          to_participant_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          from_participant_id: string
+          group_id: string
+          id?: string
+          notes?: string | null
+          receipt_url?: string | null
+          to_participant_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          from_participant_id?: string
+          group_id?: string
+          id?: string
+          notes?: string | null
+          receipt_url?: string | null
+          to_participant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_from_participant_id_fkey"
+            columns: ["from_participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_to_participant_id_fkey"
+            columns: ["to_participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pix_keys: {
+        Row: {
+          created_at: string
+          id: string
+          key_type: string
+          key_value: string
+          label: string | null
+          participant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_type: string
+          key_value: string
+          label?: string | null
+          participant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_type?: string
+          key_value?: string
+          label?: string | null
+          participant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pix_keys_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_color: string | null
@@ -44,12 +277,79 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_items: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          due_day: number | null
+          group_id: string
+          id: string
+          month: string
+          name: string
+          paid_amount: number | null
+          paid_by_id: string | null
+          split_among: string[] | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          due_day?: number | null
+          group_id: string
+          id?: string
+          month: string
+          name: string
+          paid_amount?: number | null
+          paid_by_id?: string | null
+          split_among?: string[] | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          due_day?: number | null
+          group_id?: string
+          id?: string
+          month?: string
+          name?: string
+          paid_amount?: number | null
+          paid_by_id?: string | null
+          split_among?: string[] | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_items_paid_by_id_fkey"
+            columns: ["paid_by_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      user_owns_group: { Args: { group_id: string }; Returns: boolean }
+      user_owns_participant: {
+        Args: { participant_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

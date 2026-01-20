@@ -42,7 +42,7 @@ import { cn } from "@/lib/utils";
 interface RecurringItemsListProps {
   items: RecurringItem[];
   participants: Participant[];
-  onAddItem: (item: Omit<RecurringItem, "id" | "status">) => string;
+  onAddItem: (item: Omit<RecurringItem, "id" | "status">) => string | Promise<string | null>;
   onRemoveItem: (id: string) => void;
   onUpdateStatus: (
     id: string,
