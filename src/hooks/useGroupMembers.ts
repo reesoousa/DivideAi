@@ -108,7 +108,7 @@ export function useGroupMembers(groupId: string | null) {
     fetchMembers();
   }, [fetchMembers]);
 
-  // Generate invite link
+  // Generate invite link - deactivates existing links first (only 1 active per group)
   const generateInviteLink = useCallback(async (options?: { 
     expiresInDays?: number; 
     maxUses?: number 
@@ -119,6 +119,17 @@ export function useGroupMembers(groupId: string | null) {
     }
 
     try {
+      // First, deactivate all existing active invites for this group
+      const { error: deactivateError } = await supabase
+        .from("group_invites")
+        .update({ is_active: false })
+        .eq("group_id", groupId)
+        .eq("is_active", true);
+
+      if (deactivateError) {
+        console.error("Error deactivating old invites:", deactivateError);
+      }
+
       // Generate a random invite code
       const inviteCode = crypto.randomUUID().replace(/-/g, '').substring(0, 12);
       
@@ -151,11 +162,15 @@ export function useGroupMembers(groupId: string | null) {
         isActive: data.is_active,
       };
 
-      setInvites(prev => [...prev, newInvite]);
+      // Replace all invites with just the new one (only 1 active)
+      setInvites([newInvite]);
       
-      // Return the full invite URL
+      // Copy to clipboard and return the full invite URL
       const baseUrl = window.location.origin;
-      return `${baseUrl}/join/${inviteCode}`;
+      const link = `${baseUrl}/join/${inviteCode}`;
+      await navigator.clipboard.writeText(link);
+      toast.success("Link de convite gerado e copiado!");
+      return link;
     } catch (error) {
       console.error("Error generating invite:", error);
       toast.error("Erro ao gerar link de convite");
