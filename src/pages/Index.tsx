@@ -78,6 +78,7 @@ const Index = () => {
   const {
     invites,
     generateInviteLink,
+    deactivateInvite,
     isLoading: isLoadingMembers,
   } = useGroupMembers(selectedGroupId);
 
@@ -311,6 +312,7 @@ const Index = () => {
                 const link = await generateInviteLink({ expiresInDays: 7 });
                 return link;
               }}
+              onRevokeInvite={deactivateInvite}
               isGeneratingInvite={isLoadingMembers}
             />
           </div>

@@ -240,68 +240,110 @@ export default function GroupSettings({
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Share2 className="h-5 w-5 text-primary" />
-                Convidar Pessoas
+                Link de Convite
               </CardTitle>
               <CardDescription>
-                Gere um link para convidar novas pessoas ao grupo
+                {invites.length > 0 
+                  ? "Gerencie o link de convite ativo do grupo"
+                  : "Gere um link para convidar novas pessoas ao grupo"
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {invites.length > 0 ? (
+                <>
+                  {/* Active invite display */}
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                      <span className="text-sm font-medium text-primary">Link ativo</span>
+                    </div>
+                    {invites.map((invite) => (
+                      <div key={invite.id} className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 text-sm bg-muted px-3 py-2 rounded-md font-mono truncate">
+                            {window.location.origin}/join/{invite.inviteCode}
+                          </code>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleCopyLink(invite.inviteCode)}
+                            className="h-9 w-9 shrink-0"
+                          >
+                            {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{invite.useCount} pessoa(s) entrou(aram) com este link</span>
+                          {invite.expiresAt && (
+                            <span>Expira em {new Date(invite.expiresAt).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Revoke invite with confirmation */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full text-destructive border-destructive/30 hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Revogar link de convite
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Revogar link de convite?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          O link de convite atual será desativado permanentemente. 
+                          Qualquer pessoa que tentar usá-lo receberá uma mensagem de que o convite foi revogado.
+                          <br /><br />
+                          <strong>Isso não remove pessoas que já entraram no grupo.</strong>
+                          <br /><br />
+                          Para convidar novas pessoas, você precisará gerar um novo link.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            invites.forEach(invite => deactivateInvite(invite.id));
+                          }}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Revogar link
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
+                  <p className="text-xs text-muted-foreground text-center">
+                    Gerar um novo link irá automaticamente desativar o link atual
+                  </p>
+                </>
+              ) : (
+                <div className="text-center py-2">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Nenhum link de convite ativo. Gere um link para convidar pessoas.
+                  </p>
+                </div>
+              )}
+
               <Button
                 onClick={handleGenerateLink}
                 disabled={isGeneratingLink}
-                variant="outline"
                 className="w-full"
               >
                 {isGeneratingLink ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : copiedLink ? (
-                  <Check className="h-4 w-4 mr-2" />
                 ) : (
                   <LinkIcon className="h-4 w-4 mr-2" />
                 )}
-                {copiedLink ? "Link copiado!" : "Gerar link de convite"}
+                {invites.length > 0 ? "Gerar novo link" : "Gerar link de convite"}
               </Button>
-
-              {invites.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Links ativos</Label>
-                  {invites.map((invite) => (
-                    <div 
-                      key={invite.id}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-mono truncate">
-                          .../{invite.inviteCode}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {invite.useCount} uso(s)
-                          {invite.expiresAt && ` • Expira em ${new Date(invite.expiresAt).toLocaleDateString()}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleCopyLink(invite.inviteCode)}
-                          className="h-8 w-8"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deactivateInvite(invite.id)}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
