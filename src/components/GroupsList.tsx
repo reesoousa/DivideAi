@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, ChevronRight, FolderOpen, Repeat, Calendar, Sparkles } from "lucide-react";
+import { Plus, Trash2, ChevronRight, FolderOpen, Repeat, Calendar, Sparkles, Loader2 } from "lucide-react";
 import { LucideIcon } from "@/components/LucideIcon";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -39,7 +39,7 @@ const availableIcons = [
 
 interface GroupsListProps {
   groups: Group[];
-  onAddGroup: (name: string, description?: string, isRecurring?: boolean, billingDay?: number, icon?: string) => string;
+  onAddGroup: (name: string, description?: string, isRecurring?: boolean, billingDay?: number, icon?: string) => Promise<string | null>;
   onRemoveGroup: (id: string) => void;
   onSelectGroup: (id: string) => void;
 }
@@ -56,17 +56,34 @@ export function GroupsList({
   const [billingDay, setBillingDay] = useState<string>("1");
   const [selectedIcon, setSelectedIcon] = useState<string>("Home");
   const [showForm, setShowForm] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const handleAdd = () => {
-    if (newGroupName.trim()) {
-      onAddGroup(
-        newGroupName.trim(),
-        newGroupDescription.trim() || undefined,
-        isRecurring,
-        isRecurring ? parseInt(billingDay) : undefined,
-        selectedIcon
-      );
-      resetForm();
+  const handleAdd = async () => {
+    if (newGroupName.trim() && !isCreating) {
+      setIsCreating(true);
+      try {
+        await onAddGroup(
+          newGroupName.trim(),
+          newGroupDescription.trim() || undefined,
+          isRecurring,
+          isRecurring ? parseInt(billingDay) : undefined,
+          selectedIcon
+        );
+        resetForm();
+      } finally {
+        setIsCreating(false);
+      }
+    }
+  };
+
+  const handleRemove = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingId(id);
+    try {
+      await onRemoveGroup(id);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -104,12 +121,14 @@ export function GroupsList({
               value={newGroupName}
               onChange={(e) => setNewGroupName(e.target.value)}
               className="bg-background/80"
+              disabled={isCreating}
             />
             <Input
               placeholder="Descrição (opcional)"
               value={newGroupDescription}
               onChange={(e) => setNewGroupDescription(e.target.value)}
               className="bg-background/80"
+              disabled={isCreating}
             />
 
             {/* Seletor de ícone */}
@@ -124,12 +143,13 @@ export function GroupsList({
                     key={icon.name}
                     type="button"
                     onClick={() => setSelectedIcon(icon.name)}
+                    disabled={isCreating}
                     className={cn(
-                      // Larger touch target for mobile
                       "w-11 h-11 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-all active:scale-95",
                       selectedIcon === icon.name
                         ? "bg-primary text-primary-foreground shadow-md scale-105"
-                        : "bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/30"
+                        : "bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/30",
+                      isCreating && "opacity-50 cursor-not-allowed"
                     )}
                     title={icon.label}
                   >
@@ -156,6 +176,7 @@ export function GroupsList({
                   id="recurring-toggle"
                   checked={isRecurring}
                   onCheckedChange={setIsRecurring}
+                  disabled={isCreating}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -170,7 +191,7 @@ export function GroupsList({
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <Label className="text-sm text-muted-foreground">Dia de cobrança</Label>
                   </div>
-                  <Select value={billingDay} onValueChange={setBillingDay}>
+                  <Select value={billingDay} onValueChange={setBillingDay} disabled={isCreating}>
                     <SelectTrigger className="mt-2 bg-background/80">
                       <SelectValue placeholder="Selecione o dia" />
                     </SelectTrigger>
@@ -187,10 +208,17 @@ export function GroupsList({
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleAdd} size="sm" className="flex-1">
-                Criar Grupo
+              <Button onClick={handleAdd} size="sm" className="flex-1" disabled={isCreating || !newGroupName.trim()}>
+                {isCreating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  "Criar Grupo"
+                )}
               </Button>
-              <Button variant="ghost" size="sm" onClick={resetForm}>
+              <Button variant="ghost" size="sm" onClick={resetForm} disabled={isCreating}>
                 Cancelar
               </Button>
             </div>
@@ -208,7 +236,10 @@ export function GroupsList({
             {groups.map((group) => (
               <div
                 key={group.id}
-                className="flex items-center gap-3 p-3 sm:p-3 rounded-xl bg-background/50 hover:bg-background/80 active:bg-background transition-colors cursor-pointer group border border-border/30"
+                className={cn(
+                  "flex items-center gap-3 p-3 sm:p-3 rounded-xl bg-background/50 hover:bg-background/80 active:bg-background transition-colors cursor-pointer group border border-border/30",
+                  deletingId === group.id && "opacity-50 pointer-events-none"
+                )}
                 onClick={() => onSelectGroup(group.id)}
               >
                 <div
@@ -239,12 +270,14 @@ export function GroupsList({
                     variant="ghost"
                     size="icon"
                     className="h-10 w-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemoveGroup(group.id);
-                    }}
+                    onClick={(e) => handleRemove(group.id, e)}
+                    disabled={deletingId === group.id}
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    {deletingId === group.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    )}
                   </Button>
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </div>

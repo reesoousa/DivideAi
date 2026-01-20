@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { ParticipantsList } from "@/components/ParticipantsList";
 import { AddExpenseForm } from "@/components/AddExpenseForm";
@@ -13,66 +13,230 @@ import { PaymentHistory } from "@/components/PaymentHistory";
 import { MonthSelector } from "@/components/MonthSelector";
 import { RecurringItemsList } from "@/components/RecurringItemsList";
 import { RecurringSummaryCard } from "@/components/RecurringSummaryCard";
-import { useExpenseSplitter } from "@/hooks/useExpenseSplitter";
-import { useGroups } from "@/hooks/useGroups";
-import { useRecurringItems } from "@/hooks/useRecurringItems";
+import { PullToRefresh } from "@/components/PullToRefresh";
+import { useSupabaseGroups } from "@/hooks/useSupabaseGroups";
+import { useSupabaseParticipants } from "@/hooks/useSupabaseParticipants";
+import { useSupabaseExpenses } from "@/hooks/useSupabaseExpenses";
+import { useSupabasePayments } from "@/hooks/useSupabasePayments";
+import { useSupabaseRecurringItems } from "@/hooks/useSupabaseRecurringItems";
 import { BottomNavItem } from "@/components/BottomNavItem";
-import { Users, Receipt, BarChart3, ArrowLeft, History, Repeat } from "lucide-react";
+import { Users, Receipt, BarChart3, ArrowLeft, History, Repeat, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LucideIcon } from "@/components/LucideIcon";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type TabValue = "expenses" | "participants" | "charts" | "history" | "recurring";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<TabValue>("expenses");
-  
+
+  // Groups hook with Supabase persistence
   const {
     groups,
     selectedGroupId,
     selectedGroup,
+    isLoading: isLoadingGroups,
+    isRefreshing: isRefreshingGroups,
     addGroup,
     removeGroup,
     selectGroup,
     deselectGroup,
-  } = useGroups();
+    refresh: refreshGroups,
+  } = useSupabaseGroups();
 
+  // Participants hook
+  const {
+    participants,
+    isLoading: isLoadingParticipants,
+    addParticipant,
+    updateParticipant,
+    removeParticipant,
+    refresh: refreshParticipants,
+  } = useSupabaseParticipants(selectedGroupId);
+
+  // Recurring items hook
   const {
     selectedMonth,
     currentMonthItems,
     monthlyTotals,
+    recurringExpenses,
+    isLoading: isLoadingRecurring,
     addRecurringItem,
     removeRecurringItem,
     updateItemStatus,
     updateRecurringItem,
     goToNextMonth,
     goToPreviousMonth,
-    clearGroupRecurringData,
-  } = useRecurringItems(selectedGroupId);
+    refresh: refreshRecurring,
+  } = useSupabaseRecurringItems(selectedGroupId);
 
+  // Combine regular expenses with recurring expenses for calculations
   const {
-    participants,
     expenses,
-    allExpenses,
-    payments,
-    totalExpenses,
-    expensesByParticipant,
-    expensesByCategory,
-    expensesByMonth,
-    balanceDetails,
-    settlements,
-    remainingSettlements,
-    addParticipant,
-    updateParticipant,
-    removeParticipant,
+    isLoading: isLoadingExpenses,
+    totalExpenses: regularTotalExpenses,
+    expensesByParticipant: regularExpensesByParticipant,
+    expensesByCategory: regularExpensesByCategory,
+    expensesByMonth: regularExpensesByMonth,
+    balanceDetails: regularBalanceDetails,
+    settlements: regularSettlements,
     addExpense,
     removeExpense,
-    addPayment,
-    removePayment,
-    clearGroupData,
-  } = useExpenseSplitter(selectedGroupId, currentMonthItems);
+    refresh: refreshExpenses,
+  } = useSupabaseExpenses(selectedGroupId, participants);
 
   const isRecurringGroup = selectedGroup?.isRecurring ?? false;
+
+  // Combine regular and recurring expenses for recurring groups
+  const allExpenses = useMemo(() => {
+    if (isRecurringGroup) {
+      return [...expenses, ...recurringExpenses];
+    }
+    return expenses;
+  }, [expenses, recurringExpenses, isRecurringGroup]);
+
+  // Recalculate totals including recurring expenses
+  const totalExpenses = useMemo(() => {
+    return allExpenses.reduce((sum, e) => sum + e.amount, 0);
+  }, [allExpenses]);
+
+  const expensesByParticipant = useMemo(() => {
+    const map: Record<string, number> = {};
+    participants.forEach((p) => {
+      map[p.id] = 0;
+    });
+    allExpenses.forEach((e) => {
+      if (map[e.paidBy] !== undefined) {
+        map[e.paidBy] += e.amount;
+      }
+    });
+    return map;
+  }, [allExpenses, participants]);
+
+  const expensesByCategory = useMemo(() => {
+    const map: Record<string, number> = {};
+    allExpenses.forEach((e) => {
+      if (!map[e.category]) {
+        map[e.category] = 0;
+      }
+      map[e.category] += e.amount;
+    });
+    return map;
+  }, [allExpenses]);
+
+  const expensesByMonth = useMemo(() => {
+    const map: Record<string, number> = {};
+    allExpenses.forEach((e) => {
+      const date = new Date(e.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      if (!map[monthKey]) {
+        map[monthKey] = 0;
+      }
+      map[monthKey] += e.amount;
+    });
+    return map;
+  }, [allExpenses]);
+
+  const balanceDetails = useMemo(() => {
+    if (participants.length === 0) return [];
+
+    const shouldPayMap: Record<string, number> = {};
+    participants.forEach((p) => {
+      shouldPayMap[p.id] = 0;
+    });
+
+    allExpenses.forEach((expense) => {
+      const splitParticipants =
+        expense.splitAmong && expense.splitAmong.length > 0
+          ? expense.splitAmong
+          : participants.map((p) => p.id);
+
+      const perPerson = expense.amount / splitParticipants.length;
+      splitParticipants.forEach((id) => {
+        if (shouldPayMap[id] !== undefined) {
+          shouldPayMap[id] += perPerson;
+        }
+      });
+    });
+
+    return participants.map((p) => {
+      const paid = expensesByParticipant[p.id] || 0;
+      const shouldPay = shouldPayMap[p.id] || 0;
+      return {
+        participantId: p.id,
+        paid,
+        shouldPay,
+        balance: paid - shouldPay,
+      };
+    });
+  }, [participants, allExpenses, expensesByParticipant]);
+
+  const settlements = useMemo(() => {
+    if (participants.length < 2) return [];
+
+    const balances: Record<string, number> = {};
+    balanceDetails.forEach((detail) => {
+      balances[detail.participantId] = detail.balance;
+    });
+
+    const debtors: { id: string; amount: number }[] = [];
+    const creditors: { id: string; amount: number }[] = [];
+
+    Object.entries(balances).forEach(([id, balance]) => {
+      if (balance < -0.01) {
+        debtors.push({ id, amount: Math.abs(balance) });
+      } else if (balance > 0.01) {
+        creditors.push({ id, amount: balance });
+      }
+    });
+
+    const result: { from: string; to: string; amount: number }[] = [];
+
+    debtors.forEach((debtor) => {
+      let remaining = debtor.amount;
+      creditors.forEach((creditor) => {
+        if (remaining > 0.01 && creditor.amount > 0.01) {
+          const transfer = Math.min(remaining, creditor.amount);
+          result.push({
+            from: debtor.id,
+            to: creditor.id,
+            amount: Math.round(transfer * 100) / 100,
+          });
+          remaining -= transfer;
+          creditor.amount -= transfer;
+        }
+      });
+    });
+
+    return result;
+  }, [participants, balanceDetails]);
+
+  // Payments hook
+  const {
+    payments,
+    isLoading: isLoadingPayments,
+    remainingSettlements,
+    addPayment,
+    removePayment,
+    refresh: refreshPayments,
+  } = useSupabasePayments(selectedGroupId, settlements);
+
+  // Combined refresh function
+  const handleRefresh = useCallback(async () => {
+    if (selectedGroupId) {
+      await Promise.all([
+        refreshParticipants(),
+        refreshExpenses(),
+        refreshPayments(),
+        refreshRecurring(),
+      ]);
+    } else {
+      await refreshGroups();
+    }
+  }, [selectedGroupId, refreshParticipants, refreshExpenses, refreshPayments, refreshRecurring, refreshGroups]);
+
+  const isLoading = isLoadingGroups || isLoadingParticipants || isLoadingExpenses || isLoadingPayments || isLoadingRecurring;
 
   const renderContent = () => {
     switch (activeTab) {
@@ -125,7 +289,6 @@ const Index = () => {
               expensesByCategory={expensesByCategory}
               totalExpenses={totalExpenses}
             />
-            {/* Gráfico mensal apenas para grupos recorrentes */}
             <ExpenseCharts
               expensesByCategory={expensesByCategory}
               expensesByMonth={isRecurringGroup ? expensesByMonth : {}}
@@ -167,33 +330,56 @@ const Index = () => {
     }
   };
 
+  // Loading skeleton for groups
+  const GroupsLoadingSkeleton = () => (
+    <div className="space-y-3">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-background/50 border border-border/30">
+          <Skeleton className="w-12 h-12 rounded-xl" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   // Groups selection view
   if (!selectedGroupId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
         <Header />
-        
-        <main className="max-w-lg mx-auto px-4 py-6">
-          <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold text-foreground mb-1">
-              Bem-vindo ao DivideAí!
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Selecione ou crie um grupo para começar
-            </p>
-          </div>
 
-          <GroupsList
-            groups={groups}
-            onAddGroup={addGroup}
-            onRemoveGroup={(id) => {
-              removeGroup(id);
-              clearGroupData(id);
-              clearGroupRecurringData(id);
-            }}
-            onSelectGroup={selectGroup}
-          />
-        </main>
+        <PullToRefresh onRefresh={handleRefresh} isRefreshing={isRefreshingGroups}>
+          <main className="max-w-lg mx-auto px-4 py-6">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold text-foreground mb-1">
+                Bem-vindo ao DivideAí!
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {isLoadingGroups ? "Carregando grupos..." : "Selecione ou crie um grupo para começar"}
+              </p>
+            </div>
+
+            {isLoadingGroups ? (
+              <div className="bg-card/70 backdrop-blur-xl border-border/50 shadow-lg rounded-lg p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground">Carregando seus grupos...</span>
+                </div>
+                <GroupsLoadingSkeleton />
+              </div>
+            ) : (
+              <GroupsList
+                groups={groups}
+                onAddGroup={addGroup}
+                onRemoveGroup={removeGroup}
+                onSelectGroup={selectGroup}
+              />
+            )}
+          </main>
+        </PullToRefresh>
       </div>
     );
   }
@@ -242,29 +428,34 @@ const Index = () => {
               )}
             </div>
           </div>
+          {isLoading && (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          )}
         </div>
       </header>
-      
-      <main className="max-w-lg mx-auto px-4 py-6 pb-32">
-        {isRecurringGroup ? (
-          <RecurringSummaryCard
-            totalMonthly={monthlyTotals.total}
-            paidAmount={monthlyTotals.paid + monthlyTotals.partial}
-            pendingAmount={monthlyTotals.pending}
-            participantsCount={participants.length}
-            billingDay={selectedGroup?.billingDay}
-          />
-        ) : (
-          <SummaryCard
-            totalExpenses={totalExpenses}
-            participantsCount={participants.length}
-          />
-        )}
 
-        <div className="mt-6 animate-fade-in">
-          {renderContent()}
-        </div>
-      </main>
+      <PullToRefresh onRefresh={handleRefresh} isRefreshing={isLoading}>
+        <main className="max-w-lg mx-auto px-4 py-6 pb-32">
+          {isRecurringGroup ? (
+            <RecurringSummaryCard
+              totalMonthly={monthlyTotals.total}
+              paidAmount={monthlyTotals.paid + monthlyTotals.partial}
+              pendingAmount={monthlyTotals.pending}
+              participantsCount={participants.length}
+              billingDay={selectedGroup?.billingDay}
+            />
+          ) : (
+            <SummaryCard
+              totalExpenses={totalExpenses}
+              participantsCount={participants.length}
+            />
+          )}
+
+          <div className="mt-6 animate-fade-in">
+            {renderContent()}
+          </div>
+        </main>
+      </PullToRefresh>
 
       {/* Bottom Navigation - Fixed with safe area */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 safe-bottom">
