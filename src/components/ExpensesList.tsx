@@ -56,43 +56,43 @@ export function ExpensesList({
   const renderExpenseItem = (expense: Expense, showRecurringBadge: boolean = false) => (
     <div
       key={expense.id}
-      className="flex items-center justify-between p-3 bg-accent rounded-lg ml-6"
+      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 p-3 bg-accent rounded-lg ml-4 sm:ml-6"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         <ParticipantAvatar 
           participant={getParticipantById(participants, expense.paidBy)} 
           size="md"
         />
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="font-medium text-foreground">{expense.description}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-medium text-foreground truncate">{expense.description}</p>
             {showRecurringBadge && expense.isRecurring && (
               <Badge 
                 variant="outline" 
-                className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30"
+                className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30 flex-shrink-0"
               >
                 <Repeat className="h-2.5 w-2.5 mr-0.5" />
                 Fixo
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground truncate">
             Pago por {getParticipantName(expense.paidBy)}
             {expense.splitAmong && expense.splitAmong.length > 0 && (
-              <span> • Dividido entre {expense.splitAmong.length} pessoas</span>
+              <span> • Dividido entre {expense.splitAmong.length}</span>
             )}
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="font-semibold text-primary">
+      <div className="flex items-center justify-between sm:justify-end gap-2 pl-11 sm:pl-0 flex-shrink-0">
+        <span className="font-semibold text-primary whitespace-nowrap">
           {formatCurrency(expense.amount)}
         </span>
         {/* Don't show delete button for recurring expenses - they should be managed in the Fixos tab */}
         {!expense.isRecurring && (
           <button
             onClick={() => onRemoveExpense(expense.id)}
-            className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive active:bg-destructive/10 rounded-lg transition-colors"
           >
             <Trash2 className="h-4 w-4" />
           </button>

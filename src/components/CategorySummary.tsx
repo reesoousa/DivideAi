@@ -42,16 +42,16 @@ export function CategorySummary({
           
           return (
             <div key={categoryId} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <LucideIcon name={getCategoryIcon(categoryId)} className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm font-medium">{getCategoryName(categoryId)}</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <LucideIcon name={getCategoryIcon(categoryId)} className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm font-medium truncate">{getCategoryName(categoryId)}</span>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex-shrink-0">
                   <span className="text-sm font-bold text-primary">
                     {formatCurrency(amount)}
                   </span>
-                  <span className="text-xs text-muted-foreground ml-2">
+                  <span className="text-xs text-muted-foreground ml-1 sm:ml-2 hidden sm:inline">
                     ({percentage.toFixed(1)}%)
                   </span>
                 </div>

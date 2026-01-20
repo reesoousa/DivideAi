@@ -172,12 +172,12 @@ export function ParticipantsList({
             Participantes ({participants.length})
           </div>
           <div className="flex items-center gap-2">
-            {/* Botão Convidar */}
+            {/* Botão Convidar - ícone apenas no mobile */}
             <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" variant="ghost">
-                  <Share2 className="h-4 w-4 mr-1" />
-                  Convidar
+                <Button size="sm" variant="ghost" className="gap-1.5 px-2 sm:px-3">
+                  <Share2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Convidar</span>
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -199,12 +199,12 @@ export function ParticipantsList({
               </DialogContent>
             </Dialog>
 
-            {/* Botão Adicionar */}
+            {/* Botão Adicionar - ícone "+" apenas no mobile */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <UserPlus className="h-4 w-4 mr-1" />
-                  Adicionar
+                <Button size="sm" variant="outline" className="gap-1.5 px-2 sm:px-3">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Adicionar</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">

@@ -49,32 +49,32 @@ export function SettlementsList({
             {settlements.map((settlement, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 bg-accent rounded-lg"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 p-3 bg-accent rounded-lg"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <div
-                    className={`w-8 h-8 rounded-full ${getParticipantAvatar(
+                    className={`w-9 h-9 sm:w-8 sm:h-8 rounded-full ${getParticipantAvatar(
                       settlement.from
-                    )} flex items-center justify-center text-primary-foreground text-sm font-medium`}
+                    )} flex items-center justify-center text-primary-foreground text-sm font-medium flex-shrink-0`}
                   >
                     {getParticipantName(settlement.from).charAt(0).toUpperCase()}
                   </div>
-                  <span className="font-medium text-foreground">
+                  <span className="font-medium text-foreground text-sm sm:text-base">
                     {getParticipantName(settlement.from)}
                   </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <div
-                    className={`w-8 h-8 rounded-full ${getParticipantAvatar(
+                    className={`w-9 h-9 sm:w-8 sm:h-8 rounded-full ${getParticipantAvatar(
                       settlement.to
-                    )} flex items-center justify-center text-primary-foreground text-sm font-medium`}
+                    )} flex items-center justify-center text-primary-foreground text-sm font-medium flex-shrink-0`}
                   >
                     {getParticipantName(settlement.to).charAt(0).toUpperCase()}
                   </div>
-                  <span className="font-medium text-foreground">
+                  <span className="font-medium text-foreground text-sm sm:text-base">
                     {getParticipantName(settlement.to)}
                   </span>
                 </div>
-                <span className="font-bold text-primary">
+                <span className="font-bold text-primary whitespace-nowrap pl-11 sm:pl-0">
                   {formatCurrency(settlement.amount)}
                 </span>
               </div>
