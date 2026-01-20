@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useSettings, Language, Currency, DateFormat, ThemeMode } from "@/contexts/SettingsContext";
+import { useSettings, Language, Currency, DateFormat } from "@/contexts/SettingsContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -16,11 +16,7 @@ import {
   ArrowLeft,
   Bell,
   Globe,
-  Palette,
   Info,
-  Moon,
-  Sun,
-  Monitor,
   DollarSign,
   Calendar,
   ExternalLink,
@@ -44,12 +40,6 @@ const dateFormats: { value: DateFormat; label: string; example: string }[] = [
   { value: "DD/MM/YYYY", label: "DD/MM/AAAA", example: "25/01/2025" },
   { value: "MM/DD/YYYY", label: "MM/DD/AAAA", example: "01/25/2025" },
   { value: "YYYY-MM-DD", label: "AAAA-MM-DD", example: "2025-01-25" },
-];
-
-const themes: { value: ThemeMode; label: string; icon: React.ElementType }[] = [
-  { value: "light", label: "Claro", icon: Sun },
-  { value: "dark", label: "Escuro", icon: Moon },
-  { value: "system", label: "Sistema", icon: Monitor },
 ];
 
 export default function Settings() {
@@ -246,51 +236,6 @@ export default function Settings() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Theme Section */}
-        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Palette className="h-5 w-5 text-primary" />
-              Visual e Experiência
-            </CardTitle>
-            <CardDescription>
-              Escolha o tema de aparência do aplicativo
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-2">
-              {themes.map((theme) => {
-                const Icon = theme.icon;
-                const isSelected = settings.theme === theme.value;
-                return (
-                  <button
-                    key={theme.value}
-                    onClick={() => updateSettings({ theme: theme.value })}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                      isSelected
-                        ? "border-primary bg-primary/10"
-                        : "border-border/50 bg-background/50 hover:bg-muted/50"
-                    }`}
-                  >
-                    <Icon
-                      className={`h-6 w-6 ${
-                        isSelected ? "text-primary" : "text-muted-foreground"
-                      }`}
-                    />
-                    <span
-                      className={`text-sm font-medium ${
-                        isSelected ? "text-primary" : "text-foreground"
-                      }`}
-                    >
-                      {theme.label}
-                    </span>
-                  </button>
-                );
-              })}
             </div>
           </CardContent>
         </Card>
