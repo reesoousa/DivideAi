@@ -63,7 +63,7 @@ export default function Settings() {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-lg mx-auto px-4 py-6 space-y-6 pb-8">
         {/* Notifications Section */}
         <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
           <CardHeader>
@@ -76,8 +76,8 @@ export default function Settings() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5 flex-1">
                 <Label htmlFor="notifications-enabled" className="font-medium">
                   Ativar notificações
                 </Label>
@@ -89,13 +89,14 @@ export default function Settings() {
                 id="notifications-enabled"
                 checked={settings.notifications.enabled}
                 onCheckedChange={(enabled) => updateNotifications({ enabled })}
+                className="flex-shrink-0"
               />
             </div>
 
             <Separator />
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5 flex-1">
                 <Label htmlFor="pending-charges" className="font-medium">
                   Cobranças pendentes
                 </Label>
@@ -110,11 +111,12 @@ export default function Settings() {
                   updateNotifications({ pendingCharges })
                 }
                 disabled={!settings.notifications.enabled}
+                className="flex-shrink-0"
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5 flex-1">
                 <Label htmlFor="new-expenses" className="font-medium">
                   Novos gastos
                 </Label>
@@ -129,6 +131,7 @@ export default function Settings() {
                   updateNotifications({ newExpenses })
                 }
                 disabled={!settings.notifications.enabled}
+                className="flex-shrink-0"
               />
             </div>
           </CardContent>

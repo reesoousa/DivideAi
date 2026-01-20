@@ -33,8 +33,27 @@ const AlertDialogContent = React.forwardRef<
     <AlertDialogOverlay />
     <AlertDialogPrimitive.Content
       ref={ref}
+      // Prevent auto-focus on mobile to avoid keyboard opening automatically
+      onOpenAutoFocus={(e) => {
+        if (window.innerWidth < 768) {
+          e.preventDefault();
+        }
+      }}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        // Mobile-first: full width on small screens, max-w-lg on larger
+        "fixed left-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%]",
+        // Better mobile positioning
+        "top-[50%] translate-y-[-50%]",
+        // Mobile: max height with scroll support
+        "max-h-[85vh] overflow-y-auto overscroll-contain",
+        // Styling
+        "gap-4 border bg-background p-5 sm:p-6 shadow-lg rounded-xl sm:rounded-lg",
+        // Animations
+        "duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out",
+        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+        "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
+        "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
         className,
       )}
       {...props}

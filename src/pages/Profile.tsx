@@ -347,7 +347,7 @@ export default function Profile() {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-lg mx-auto px-4 py-6 space-y-6 pb-8">
         {/* Profile Section */}
         <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
           <CardHeader>
@@ -424,17 +424,16 @@ export default function Profile() {
               />
             </div>
 
-            {/* Color picker */}
             <div className="space-y-2">
               <Label>Cor do avatar</Label>
-              <div className="flex items-center gap-3">
-                <div className="flex gap-2">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex flex-wrap gap-2">
                   {["#E57373", "#64B5F6", "#81C784", "#FFD54F", "#BA68C8", "#4DB6AC", "#A1887F"].map((color) => (
                     <button
                       key={color}
                       onClick={() => setAvatarColor(color)}
-                      className={`w-8 h-8 rounded-full transition-all ${
-                        avatarColor === color ? "ring-2 ring-primary ring-offset-2 scale-110" : ""
+                      className={`w-10 h-10 rounded-full transition-all active:scale-95 ${
+                        avatarColor === color ? "ring-2 ring-primary ring-offset-2 scale-105" : ""
                       }`}
                       style={{ backgroundColor: color }}
                     />

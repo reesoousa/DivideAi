@@ -17,14 +17,21 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      // Larger touch target for mobile (min 44px height)
+      "flex h-12 w-full items-center justify-between rounded-md border border-input",
+      "bg-background px-3 py-3 text-[16px] sm:text-sm",
+      "ring-offset-background placeholder:text-muted-foreground",
+      "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+      "disabled:cursor-not-allowed disabled:opacity-50",
+      "transition-all duration-200",
+      "[&>span]:line-clamp-1",
       className,
     )}
     {...props}
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
+      <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
@@ -105,7 +112,13 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground",
+      // Larger touch target for mobile (min 44px height)
+      "relative flex w-full cursor-default select-none items-center rounded-md",
+      "min-h-[44px] py-2.5 pl-8 pr-3 text-[16px] sm:text-sm",
+      "outline-none transition-colors",
+      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "focus:bg-accent focus:text-accent-foreground",
+      "active:bg-accent/80",
       className,
     )}
     {...props}
