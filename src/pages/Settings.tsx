@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useSettings, Language, Currency, DateFormat } from "@/contexts/SettingsContext";
+import { useSettings, Language, Currency, DateFormat, ThemeMode } from "@/contexts/SettingsContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -20,6 +20,10 @@ import {
   DollarSign,
   Calendar,
   ExternalLink,
+  Palette,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
 
 const APP_VERSION = "1.0.0";
@@ -42,9 +46,15 @@ const dateFormats: { value: DateFormat; label: string; example: string }[] = [
   { value: "YYYY-MM-DD", label: "AAAA-MM-DD", example: "2025-01-25" },
 ];
 
+const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
+  { value: "light", label: "Claro", icon: Sun },
+  { value: "dark", label: "Escuro", icon: Moon },
+  { value: "system", label: "Sistema", icon: Monitor },
+];
+
 export default function Settings() {
   const navigate = useNavigate();
-  const { settings, updateSettings, updateNotifications } = useSettings();
+  const { settings, updateSettings, updateNotifications, updateTheme } = useSettings();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
@@ -64,6 +74,43 @@ export default function Settings() {
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6 pb-8">
+        {/* Theme Section */}
+        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Palette className="h-5 w-5 text-primary" />
+              Aparência
+            </CardTitle>
+            <CardDescription>
+              Escolha o tema do aplicativo
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-2">
+              {themeOptions.map((option) => {
+                const Icon = option.icon;
+                const isSelected = settings.theme === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => updateTheme(option.value)}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? "border-primary bg-primary/10"
+                        : "border-border/50 bg-background/50 hover:border-primary/50"
+                    }`}
+                  >
+                    <Icon className={`h-6 w-6 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className={`text-sm font-medium ${isSelected ? "text-primary" : "text-foreground"}`}>
+                      {option.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Notifications Section */}
         <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
           <CardHeader>
