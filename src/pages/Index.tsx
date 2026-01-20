@@ -95,6 +95,7 @@ const Index = () => {
               remainingSettlements={remainingSettlements}
               participants={participants}
               payments={payments}
+              groupName={selectedGroup?.name}
               onAddPayment={addPayment}
             />
             <TransparencyCard

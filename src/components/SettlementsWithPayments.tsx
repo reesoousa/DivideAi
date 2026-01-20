@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, CreditCard, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, CreditCard, Upload, QrCode } from "lucide-react";
 import { Settlement, Participant, Payment } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ParticipantAvatar, getParticipantById } from "@/components/ParticipantAvatar";
+import { PixPaymentModal } from "./PixPaymentModal";
 
 interface SettlementsWithPaymentsProps {
   settlements: Settlement[];
   remainingSettlements: Settlement[];
   participants: Participant[];
   payments: Payment[];
+  groupName?: string;
   onAddPayment: (
     from: string,
     to: string,
@@ -40,6 +42,7 @@ export function SettlementsWithPayments({
   remainingSettlements,
   participants,
   payments,
+  groupName,
   onAddPayment,
 }: SettlementsWithPaymentsProps) {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -47,6 +50,10 @@ export function SettlementsWithPayments({
   const [paymentAmount, setPaymentAmount] = useState("");
   const [receiptUrl, setReceiptUrl] = useState("");
   const [note, setNote] = useState("");
+  
+  // Pix modal state
+  const [pixModalOpen, setPixModalOpen] = useState(false);
+  const [pixSettlement, setPixSettlement] = useState<Settlement | null>(null);
 
   const getParticipantName = (id: string) => {
     return participants.find((p) => p.id === id)?.name || "Desconhecido";
@@ -177,14 +184,29 @@ export function SettlementsWithPayments({
                           Quitado
                         </div>
                       ) : (
-                        <Button
-                          size="default"
-                          onClick={() => handleOpenPayment(settlement)}
-                          className="gap-2 w-full sm:w-auto"
-                        >
-                          <CreditCard className="h-4 w-4" />
-                          Registrar Pagamento
-                        </Button>
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                          {/* Pix Payment Button */}
+                          <Button
+                            size="default"
+                            variant="outline"
+                            onClick={() => {
+                              setPixSettlement(settlement);
+                              setPixModalOpen(true);
+                            }}
+                            className="gap-2 w-full sm:w-auto"
+                          >
+                            <QrCode className="h-4 w-4" />
+                            <span className="hidden sm:inline">Pagar com</span> Pix
+                          </Button>
+                          <Button
+                            size="default"
+                            onClick={() => handleOpenPayment(settlement)}
+                            className="gap-2 w-full sm:w-auto"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            <span className="hidden sm:inline">Registrar</span> Pagamento
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -258,6 +280,28 @@ export function SettlementsWithPayments({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Pix Payment Modal */}
+      {pixSettlement && (
+        <PixPaymentModal
+          open={pixModalOpen}
+          onOpenChange={setPixModalOpen}
+          settlement={pixSettlement}
+          participants={participants}
+          groupName={groupName}
+          onMarkAsPaid={() => {
+            onAddPayment(
+              pixSettlement.from,
+              pixSettlement.to,
+              getRemainingAmount(pixSettlement),
+              undefined,
+              "Pagamento via Pix"
+            );
+            setPixModalOpen(false);
+            setPixSettlement(null);
+          }}
+        />
+      )}
     </>
   );
 }
