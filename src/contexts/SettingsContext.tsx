@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { z } from "zod";
 
 export type Language = "pt-BR" | "en-US" | "es-ES";
 export type Currency = "BRL" | "USD" | "EUR";
@@ -27,6 +28,21 @@ interface SettingsContextType {
   formatDate: (date: Date) => string;
 }
 
+// Zod schema for settings validation
+const notificationSettingsSchema = z.object({
+  enabled: z.boolean(),
+  pendingCharges: z.boolean(),
+  newExpenses: z.boolean(),
+});
+
+const settingsSchema = z.object({
+  language: z.enum(["pt-BR", "en-US", "es-ES"]),
+  currency: z.enum(["BRL", "USD", "EUR"]),
+  dateFormat: z.enum(["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]),
+  theme: z.enum(["light", "dark", "system"]),
+  notifications: notificationSettingsSchema,
+});
+
 const defaultSettings: AppSettings = {
   language: "pt-BR",
   currency: "BRL",
@@ -43,18 +59,39 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 const STORAGE_KEY = "divideai-settings";
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<AppSettings>(() => {
+// Safe function to load and validate settings from localStorage
+function loadSettingsFromStorage(): AppSettings {
+  try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        return { ...defaultSettings, ...JSON.parse(stored) };
-      } catch {
-        return defaultSettings;
-      }
+    if (!stored) return defaultSettings;
+    
+    const parsed = JSON.parse(stored);
+    
+    // Validate with zod schema - use partial and merge with defaults
+    const validated = settingsSchema.partial().safeParse(parsed);
+    
+    if (validated.success) {
+      // Merge with defaults to ensure all required fields exist
+      return {
+        ...defaultSettings,
+        ...validated.data,
+        notifications: {
+          ...defaultSettings.notifications,
+          ...(validated.data.notifications || {}),
+        },
+      };
     }
+    
+    // If validation fails, return defaults
+    console.warn("Invalid settings in localStorage, using defaults");
     return defaultSettings;
-  });
+  } catch {
+    return defaultSettings;
+  }
+}
+
+export function SettingsProvider({ children }: { children: ReactNode }) {
+  const [settings, setSettings] = useState<AppSettings>(loadSettingsFromStorage);
 
   // Always apply light theme
   useEffect(() => {

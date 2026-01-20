@@ -298,24 +298,55 @@ export default function Profile() {
 
     setDeletingAccount(true);
 
-    // Delete avatar from storage
-    if (avatarUrl) {
-      const path = avatarUrl.split("/").slice(-2).join("/");
-      await supabase.storage.from("avatars").remove([path]);
+    try {
+      // Get the current session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação",
+          description: "Você precisa estar logado para excluir sua conta.",
+        });
+        setDeletingAccount(false);
+        return;
+      }
+
+      // Call the edge function to delete the account
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Falha ao excluir conta");
+      }
+
+      toast({
+        title: "Conta excluída",
+        description: "Sua conta foi removida com sucesso. Obrigado por usar o DivideAí.",
+      });
+
+      await signOut();
+      navigate("/auth");
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir conta",
+        description: "Não foi possível excluir sua conta. Tente novamente.",
+      });
+    } finally {
+      setDeletingAccount(false);
     }
-
-    // Delete profile (will cascade from auth deletion)
-    // Note: The actual user deletion should be done via an edge function
-    // with service role for security. For now, we sign out the user.
-    
-    toast({
-      title: "Conta excluída",
-      description: "Sua conta foi removida. Obrigado por usar o DivideAí.",
-    });
-
-    await signOut();
-    navigate("/auth");
-    setDeletingAccount(false);
   };
 
   const getInitials = (name: string) => {
