@@ -56,35 +56,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return defaultSettings;
   });
 
-  // Apply theme
+  // Always apply light theme
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
-
-    if (settings.theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(settings.theme);
-    }
-  }, [settings.theme]);
-
-  // Listen for system theme changes
-  useEffect(() => {
-    if (settings.theme !== "system") return;
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      const root = window.document.documentElement;
-      root.classList.remove("light", "dark");
-      root.classList.add(e.matches ? "dark" : "light");
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, [settings.theme]);
+    root.classList.add("light");
+  }, []);
 
   // Persist settings
   useEffect(() => {
