@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2, Mail, Lock, User } from "lucide-react";
 import divideaiLogo from "@/assets/divideai-logo.png";
+import divideaiLogoDark from "@/assets/divideai-logo-dark.png";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -19,6 +20,35 @@ export default function Auth() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Detect dark mode from system or document class
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const isDark = document.documentElement.classList.contains('dark') ||
+        (!document.documentElement.classList.contains('light') && 
+         window.matchMedia('(prefers-color-scheme: dark)').matches);
+      setIsDarkMode(isDark);
+    };
+
+    checkDarkMode();
+
+    // Watch for class changes on documentElement
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { 
+      attributes: true, 
+      attributeFilter: ['class'] 
+    });
+
+    // Watch for system preference changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', checkDarkMode);
+
+    return () => {
+      observer.disconnect();
+      mediaQuery.removeEventListener('change', checkDarkMode);
+    };
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +133,7 @@ export default function Auth() {
       <header className="px-4 pt-8 sm:pt-12 md:pt-16 lg:pt-20 pb-4 sm:pb-6 text-center">
         <div className="flex items-center justify-center mb-2">
           <img 
-            src={divideaiLogo} 
+            src={isDarkMode ? divideaiLogoDark : divideaiLogo} 
             alt="DivideAí" 
             className="h-8 w-auto"
           />
@@ -114,7 +144,7 @@ export default function Auth() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-start justify-center px-4 pb-8">
+      <main className="flex-1 flex flex-col items-center justify-start px-4 pb-8">
         <Card className="w-full max-w-md border-border/50 shadow-xl bg-card/80 backdrop-blur-sm">
           <Tabs defaultValue="login" className="w-full">
             <CardHeader className="pb-4">
@@ -327,14 +357,12 @@ export default function Auth() {
             </CardContent>
           </Tabs>
         </Card>
-      </main>
 
-      {/* Footer */}
-      <footer className="py-4 text-center">
-        <p className="text-xs text-muted-foreground">
+        {/* Legal text aligned with card */}
+        <p className="text-xs text-muted-foreground text-center mt-4 w-full max-w-md">
           DivideAí © 2025 • Simplifique suas divisões
         </p>
-      </footer>
+      </main>
     </div>
   );
 }
