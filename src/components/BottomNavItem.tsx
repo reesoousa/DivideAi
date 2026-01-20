@@ -15,7 +15,7 @@ export function BottomNavItem({ icon: Icon, label, isActive, onClick }: BottomNa
       className={cn(
         // Larger touch target for mobile (min 44px)
         "flex flex-col items-center justify-center gap-1 py-3 px-4 min-h-[52px] min-w-[52px]",
-        "rounded-xl transition-all duration-200 active:scale-95",
+        "rounded-lg transition-all duration-200 active:scale-95",
         // Prevent accidental taps with proper spacing
         isActive
           ? "text-primary bg-primary/10"

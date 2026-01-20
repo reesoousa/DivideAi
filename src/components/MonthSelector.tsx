@@ -18,7 +18,7 @@ export function MonthSelector({
   const formattedMonth = format(date, "MMMM 'de' yyyy", { locale: ptBR });
 
   return (
-    <div className="flex items-center justify-between bg-card/70 backdrop-blur-xl border border-border/50 rounded-xl p-2 sm:p-3 shadow-sm">
+    <div className="flex items-center justify-between bg-card/70 backdrop-blur-xl border border-border/50 rounded-xl p-3 shadow-sm">
       <Button
         variant="ghost"
         size="icon"
