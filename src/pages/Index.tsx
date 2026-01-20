@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { ParticipantsList } from "@/components/ParticipantsList";
 import { AddExpenseForm } from "@/components/AddExpenseForm";
@@ -20,16 +21,20 @@ import { useSupabaseExpenses } from "@/hooks/useSupabaseExpenses";
 import { useSupabasePayments } from "@/hooks/useSupabasePayments";
 import { useSupabaseRecurringItems } from "@/hooks/useSupabaseRecurringItems";
 import { BottomNavItem } from "@/components/BottomNavItem";
-import { Users, Receipt, BarChart3, ArrowLeft, History, Repeat, Loader2 } from "lucide-react";
+import GroupSettings from "@/pages/GroupSettings";
+import { Users, Receipt, BarChart3, ArrowLeft, History, Repeat, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LucideIcon } from "@/components/LucideIcon";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type TabValue = "expenses" | "participants" | "charts" | "history" | "recurring";
+type ViewMode = "main" | "settings";
 
 const Index = () => {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabValue>("expenses");
+  const [viewMode, setViewMode] = useState<ViewMode>("main");
 
   // Groups hook with Supabase persistence
   const {
@@ -38,12 +43,25 @@ const Index = () => {
     selectedGroup,
     isLoading: isLoadingGroups,
     isRefreshing: isRefreshingGroups,
+    isOwner,
+    isAdmin,
     addGroup,
     removeGroup,
+    updateGroup,
     selectGroup,
     deselectGroup,
     refresh: refreshGroups,
   } = useSupabaseGroups();
+
+  // Handle navigation state (from invite redirect)
+  useEffect(() => {
+    const state = location.state as { selectGroupId?: string } | null;
+    if (state?.selectGroupId) {
+      selectGroup(state.selectGroupId);
+      // Clear the state to prevent re-selecting on subsequent navigations
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, selectGroup]);
 
   // Participants hook
   const {
@@ -384,6 +402,21 @@ const Index = () => {
     );
   }
 
+  // If showing group settings
+  if (viewMode === "settings" && selectedGroup) {
+    return (
+      <GroupSettings
+        group={selectedGroup}
+        onBack={() => setViewMode("main")}
+        onUpdateGroup={updateGroup}
+        onDeleteGroup={async (id) => {
+          await removeGroup(id);
+          setViewMode("main");
+        }}
+      />
+    );
+  }
+
   // Group detail view with tabs
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
@@ -428,9 +461,21 @@ const Index = () => {
               )}
             </div>
           </div>
-          {isLoading && (
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          )}
+          <div className="flex items-center gap-1">
+            {isLoading && (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            )}
+            {(isOwner || isAdmin) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewMode("settings")}
+                className="h-9 w-9"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,6 +24,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Handle pending invite after sign in
+        if (event === 'SIGNED_IN' && session) {
+          const pendingInvite = sessionStorage.getItem("pendingInvite");
+          if (pendingInvite) {
+            // Small delay to ensure React Router is ready
+            setTimeout(() => {
+              window.location.href = `/join/${pendingInvite}`;
+            }, 100);
+          }
+        }
       }
     );
 

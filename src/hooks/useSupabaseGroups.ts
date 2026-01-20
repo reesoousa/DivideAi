@@ -19,6 +19,8 @@ export function useSupabaseGroups() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Fetch groups from Supabase
   const fetchGroups = useCallback(async (showRefreshIndicator = false) => {
@@ -171,12 +173,44 @@ export function useSupabaseGroups() {
     }
   }, []);
 
-  const selectGroup = useCallback((id: string) => {
+  const selectGroup = useCallback(async (id: string) => {
     setSelectedGroupId(id);
-  }, []);
+    
+    // Check ownership and membership
+    if (!user) return;
+    
+    try {
+      // Check if owner
+      const { data: group } = await supabase
+        .from("groups")
+        .select("user_id")
+        .eq("id", id)
+        .single();
+      
+      const userIsOwner = group?.user_id === user.id;
+      setIsOwner(userIsOwner);
+      
+      // Check if member and role
+      const { data: membership } = await supabase
+        .from("group_members")
+        .select("role")
+        .eq("group_id", id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      // Admin if owner or has admin role
+      setIsAdmin(userIsOwner || membership?.role === 'admin');
+    } catch (error) {
+      console.error("Error checking group permissions:", error);
+      setIsOwner(false);
+      setIsAdmin(false);
+    }
+  }, [user]);
 
   const deselectGroup = useCallback(() => {
     setSelectedGroupId(null);
+    setIsOwner(false);
+    setIsAdmin(false);
   }, []);
 
   const selectedGroup = groups.find((g) => g.id === selectedGroupId);
@@ -191,6 +225,8 @@ export function useSupabaseGroups() {
     selectedGroup,
     isLoading,
     isRefreshing,
+    isOwner,
+    isAdmin,
     addGroup,
     removeGroup,
     updateGroup,
