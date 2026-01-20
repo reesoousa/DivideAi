@@ -3,7 +3,7 @@ import { Group } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -160,72 +160,68 @@ export function GroupsList({
             </div>
 
             {/* Seletor de tipo de grupo */}
-            <div className="bg-background/50 rounded-lg p-3 space-y-3 border border-border/20">
-              <Label className="font-medium">Tipo de grupo</Label>
+            <div className="bg-background/50 rounded-lg p-4 space-y-3 border border-border/20">
+              <Label className="font-medium text-sm">Tipo de grupo</Label>
               
-              <ToggleGroup
-                type="single"
-                value={isRecurring ? "recurring" : "single"}
-                onValueChange={(value) => {
-                  if (value) setIsRecurring(value === "recurring");
-                }}
-                className="grid grid-cols-2 gap-3 w-full"
-                disabled={isCreating}
-              >
-                <ToggleGroupItem
-                  value="single"
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsRecurring(false)}
+                  disabled={isCreating}
                   className={cn(
-                    "flex flex-col items-center justify-start gap-2 p-4 min-h-[100px] rounded-lg border-2 transition-colors data-[state=on]:bg-transparent",
+                    "flex flex-col items-center text-center p-4 rounded-lg border-2 transition-colors",
                     !isRecurring
                       ? "bg-primary/10 border-primary"
-                      : "bg-background/80 border-border/50 hover:bg-muted/50 hover:border-muted-foreground/30",
+                      : "bg-background/80 border-border/50 hover:bg-muted/50",
                     isCreating && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                    "w-9 h-9 rounded-full flex items-center justify-center mb-2",
                     !isRecurring ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                   )}>
-                    <Sparkles className="h-5 w-5" />
+                    <Sparkles className="h-4 w-4" />
                   </div>
                   <span className={cn(
-                    "font-medium text-sm transition-colors",
+                    "font-medium text-sm",
                     !isRecurring ? "text-primary" : "text-foreground"
                   )}>
                     Grupo Único
                   </span>
-                  <span className="text-[11px] text-muted-foreground text-center leading-tight">
+                  <span className="text-xs text-muted-foreground mt-1">
                     Viagens, eventos pontuais
                   </span>
-                </ToggleGroupItem>
+                </button>
                 
-                <ToggleGroupItem
-                  value="recurring"
+                <button
+                  type="button"
+                  onClick={() => setIsRecurring(true)}
+                  disabled={isCreating}
                   className={cn(
-                    "flex flex-col items-center justify-start gap-2 p-4 min-h-[100px] rounded-lg border-2 transition-colors data-[state=on]:bg-transparent",
+                    "flex flex-col items-center text-center p-4 rounded-lg border-2 transition-colors",
                     isRecurring
                       ? "bg-primary/10 border-primary"
-                      : "bg-background/80 border-border/50 hover:bg-muted/50 hover:border-muted-foreground/30",
+                      : "bg-background/80 border-border/50 hover:bg-muted/50",
                     isCreating && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                    "w-9 h-9 rounded-full flex items-center justify-center mb-2",
                     isRecurring ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                   )}>
-                    <Repeat className="h-5 w-5" />
+                    <Repeat className="h-4 w-4" />
                   </div>
                   <span className={cn(
-                    "font-medium text-sm transition-colors",
+                    "font-medium text-sm",
                     isRecurring ? "text-primary" : "text-foreground"
                   )}>
                     Grupo Recorrente
                   </span>
-                  <span className="text-[11px] text-muted-foreground text-center leading-tight">
-                    Contas mensais, despesas fixas
+                  <span className="text-xs text-muted-foreground mt-1">
+                    Contas, despesas fixas
                   </span>
-                </ToggleGroupItem>
-              </ToggleGroup>
+                </button>
+              </div>
 
               {isRecurring && (
                 <div className="pt-2 border-t border-border/30">
