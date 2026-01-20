@@ -82,6 +82,7 @@ const Index = () => {
             <AddExpenseForm
               participants={participants}
               onAddExpense={addExpense}
+              onNavigateToParticipants={() => setActiveTab("participants")}
             />
             <ExpensesList
               expenses={isRecurringGroup ? allExpenses : expenses}

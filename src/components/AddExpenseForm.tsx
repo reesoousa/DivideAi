@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Receipt } from "lucide-react";
+import { Receipt, ArrowRight } from "lucide-react";
 import { Participant } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,11 +25,13 @@ interface AddExpenseFormProps {
     category: string,
     splitAmong?: string[]
   ) => void;
+  onNavigateToParticipants?: () => void;
 }
 
 export function AddExpenseForm({
   participants,
   onAddExpense,
+  onNavigateToParticipants,
 }: AddExpenseFormProps) {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -156,9 +158,14 @@ export function AddExpenseForm({
           </Button>
         </form>
         {isDisabled && (
-          <p className="text-muted-foreground text-sm text-center mt-3">
-            Adicione participantes primeiro
-          </p>
+          <button
+            type="button"
+            onClick={onNavigateToParticipants}
+            className="flex items-center justify-center gap-2 text-primary text-sm mt-3 mx-auto hover:opacity-80 transition-opacity min-h-[44px] group"
+          >
+            <span className="underline underline-offset-2">Adicione participantes primeiro</span>
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </button>
         )}
       </CardContent>
     </Card>
