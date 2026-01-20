@@ -3,7 +3,7 @@ import { Group } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -159,31 +159,59 @@ export function GroupsList({
               </div>
             </div>
 
-            {/* Toggle para grupo recorrente com rótulo dinâmico */}
+            {/* Seletor de tipo de grupo */}
             <div className="bg-background/50 rounded-lg p-3 space-y-3 border border-border/20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {isRecurring ? (
-                    <Repeat className="h-4 w-4 text-primary" />
-                  ) : (
-                    <Sparkles className="h-4 w-4 text-muted-foreground" />
+              <Label className="font-medium">Tipo de grupo</Label>
+              
+              <ToggleGroup
+                type="single"
+                value={isRecurring ? "recurring" : "single"}
+                onValueChange={(value) => {
+                  if (value) setIsRecurring(value === "recurring");
+                }}
+                className="grid grid-cols-2 gap-2 w-full"
+                disabled={isCreating}
+              >
+                <ToggleGroupItem
+                  value="single"
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-1 p-3 h-auto rounded-lg border transition-all",
+                    !isRecurring
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-background/80 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground",
+                    isCreating && "opacity-50 cursor-not-allowed"
                   )}
-                  <Label htmlFor="recurring-toggle" className="font-medium cursor-pointer">
-                    {isRecurring ? "Grupo Recorrente" : "Grupo Único"}
-                  </Label>
-                </div>
-                <Switch
-                  id="recurring-toggle"
-                  checked={isRecurring}
-                  onCheckedChange={setIsRecurring}
-                  disabled={isCreating}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {isRecurring
-                  ? "Habilita filtros mensais, itens fixos e controle de pagamentos recorrentes."
-                  : "Ideal para viagens, eventos ou divisões pontuais."}
-              </p>
+                >
+                  <Sparkles className="h-5 w-5" />
+                  <span className="font-medium text-sm">Grupo Único</span>
+                  <span className={cn(
+                    "text-[10px] text-center leading-tight",
+                    !isRecurring ? "text-primary-foreground/80" : "text-muted-foreground"
+                  )}>
+                    Viagens, eventos pontuais
+                  </span>
+                </ToggleGroupItem>
+                
+                <ToggleGroupItem
+                  value="recurring"
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-1 p-3 h-auto rounded-lg border transition-all",
+                    isRecurring
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-background/80 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground",
+                    isCreating && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <Repeat className="h-5 w-5" />
+                  <span className="font-medium text-sm">Grupo Recorrente</span>
+                  <span className={cn(
+                    "text-[10px] text-center leading-tight",
+                    isRecurring ? "text-primary-foreground/80" : "text-muted-foreground"
+                  )}>
+                    Contas mensais, despesas fixas
+                  </span>
+                </ToggleGroupItem>
+              </ToggleGroup>
 
               {isRecurring && (
                 <div className="pt-2 border-t border-border/30">
