@@ -47,7 +47,8 @@ const Index = () => {
     updateRecurringItem,
     goToNextMonth,
     goToPreviousMonth,
-  } = useRecurringItems();
+    clearGroupRecurringData,
+  } = useRecurringItems(selectedGroupId);
 
   const {
     participants,
@@ -68,7 +69,8 @@ const Index = () => {
     removeExpense,
     addPayment,
     removePayment,
-  } = useExpenseSplitter(currentMonthItems);
+    clearGroupData,
+  } = useExpenseSplitter(selectedGroupId, currentMonthItems);
 
   const isRecurringGroup = selectedGroup?.isRecurring ?? false;
 
@@ -182,7 +184,11 @@ const Index = () => {
           <GroupsList
             groups={groups}
             onAddGroup={addGroup}
-            onRemoveGroup={removeGroup}
+            onRemoveGroup={(id) => {
+              removeGroup(id);
+              clearGroupData(id);
+              clearGroupRecurringData(id);
+            }}
             onSelectGroup={selectGroup}
           />
         </main>

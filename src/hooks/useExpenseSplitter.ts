@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Participant, Expense, Settlement, BalanceDetail, Payment, RecurringItem } from "@/types/expense";
 
 // IMPORTANT: No white/light colors - all must be visible against light backgrounds
@@ -15,10 +15,32 @@ const avatarColors = [
   "bg-neutral-500",
 ];
 
-export function useExpenseSplitter(recurringItems: RecurringItem[] = []) {
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
+interface GroupData {
+  participants: Participant[];
+  expenses: Expense[];
+  payments: Payment[];
+}
+
+export function useExpenseSplitter(groupId: string | null, recurringItems: RecurringItem[] = []) {
+  // Store data per group
+  const [groupsData, setGroupsData] = useState<Record<string, GroupData>>({});
+
+  // Get current group's data or empty defaults
+  const currentData = useMemo((): GroupData => {
+    if (!groupId) return { participants: [], expenses: [], payments: [] };
+    return groupsData[groupId] || { participants: [], expenses: [], payments: [] };
+  }, [groupsData, groupId]);
+
+  const { participants, expenses, payments } = currentData;
+
+  // Helper to update current group's data
+  const updateGroupData = useCallback((updater: (data: GroupData) => GroupData) => {
+    if (!groupId) return;
+    setGroupsData(prev => ({
+      ...prev,
+      [groupId]: updater(prev[groupId] || { participants: [], expenses: [], payments: [] })
+    }));
+  }, [groupId]);
 
   // Convert recurring items to expenses for unified calculations
   const recurringExpenses: Expense[] = useMemo(() => {
@@ -42,58 +64,77 @@ export function useExpenseSplitter(recurringItems: RecurringItem[] = []) {
     return [...expenses, ...recurringExpenses];
   }, [expenses, recurringExpenses]);
 
-  const addParticipant = (
+  const addParticipant = useCallback((
     name: string, 
     role?: string, 
     participationPercentage?: number,
     avatarColor?: string,
     avatarImage?: string
   ) => {
-    const newParticipant: Participant = {
-      id: crypto.randomUUID(),
-      name,
-      avatar: avatarColor || avatarColors[participants.length % avatarColors.length],
-      avatarType: avatarImage ? 'image' : 'color',
-      avatarImage,
-      role,
-      participationPercentage: participationPercentage || 100,
-    };
-    setParticipants([...participants, newParticipant]);
-  };
+    updateGroupData(data => {
+      const newParticipant: Participant = {
+        id: crypto.randomUUID(),
+        name,
+        avatar: avatarColor || avatarColors[data.participants.length % avatarColors.length],
+        avatarType: avatarImage ? 'image' : 'color',
+        avatarImage,
+        role,
+        participationPercentage: participationPercentage || 100,
+      };
+      return {
+        ...data,
+        participants: [...data.participants, newParticipant]
+      };
+    });
+  }, [updateGroupData]);
 
-  const updateParticipant = (id: string, updates: Partial<Participant>) => {
-    setParticipants(participants.map((p) => 
-      p.id === id ? { ...p, ...updates } : p
-    ));
-  };
+  const updateParticipant = useCallback((id: string, updates: Partial<Participant>) => {
+    updateGroupData(data => ({
+      ...data,
+      participants: data.participants.map((p) => 
+        p.id === id ? { ...p, ...updates } : p
+      )
+    }));
+  }, [updateGroupData]);
 
-  const removeParticipant = (id: string) => {
-    setParticipants(participants.filter((p) => p.id !== id));
-    setExpenses(expenses.filter((e) => e.paidBy !== id));
-  };
+  const removeParticipant = useCallback((id: string) => {
+    updateGroupData(data => ({
+      ...data,
+      participants: data.participants.filter((p) => p.id !== id),
+      expenses: data.expenses.filter((e) => e.paidBy !== id)
+    }));
+  }, [updateGroupData]);
 
-  const addExpense = (
+  const addExpense = useCallback((
     description: string, 
     amount: number, 
     paidBy: string, 
     category: string = "other",
     splitAmong?: string[]
   ) => {
-    const newExpense: Expense = {
-      id: crypto.randomUUID(),
-      description,
-      amount,
-      paidBy,
-      category,
-      date: new Date(),
-      splitAmong,
-    };
-    setExpenses([...expenses, newExpense]);
-  };
+    updateGroupData(data => {
+      const newExpense: Expense = {
+        id: crypto.randomUUID(),
+        description,
+        amount,
+        paidBy,
+        category,
+        date: new Date(),
+        splitAmong,
+      };
+      return {
+        ...data,
+        expenses: [...data.expenses, newExpense]
+      };
+    });
+  }, [updateGroupData]);
 
-  const removeExpense = (id: string) => {
-    setExpenses(expenses.filter((e) => e.id !== id));
-  };
+  const removeExpense = useCallback((id: string) => {
+    updateGroupData(data => ({
+      ...data,
+      expenses: data.expenses.filter((e) => e.id !== id)
+    }));
+  }, [updateGroupData]);
 
   const totalExpenses = useMemo(() => {
     return allExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -214,28 +255,36 @@ export function useExpenseSplitter(recurringItems: RecurringItem[] = []) {
     return result;
   }, [participants, balanceDetails]);
 
-  const addPayment = (
+  const addPayment = useCallback((
     settlementFrom: string,
     settlementTo: string,
     amount: number,
     receiptUrl?: string,
     note?: string
   ) => {
-    const newPayment: Payment = {
-      id: crypto.randomUUID(),
-      settlementFrom,
-      settlementTo,
-      amount,
-      date: new Date(),
-      receiptUrl,
-      note,
-    };
-    setPayments([...payments, newPayment]);
-  };
+    updateGroupData(data => {
+      const newPayment: Payment = {
+        id: crypto.randomUUID(),
+        settlementFrom,
+        settlementTo,
+        amount,
+        date: new Date(),
+        receiptUrl,
+        note,
+      };
+      return {
+        ...data,
+        payments: [...data.payments, newPayment]
+      };
+    });
+  }, [updateGroupData]);
 
-  const removePayment = (id: string) => {
-    setPayments(payments.filter((p) => p.id !== id));
-  };
+  const removePayment = useCallback((id: string) => {
+    updateGroupData(data => ({
+      ...data,
+      payments: data.payments.filter((p) => p.id !== id)
+    }));
+  }, [updateGroupData]);
 
   // Calculate remaining settlements after payments
   const remainingSettlements = useMemo((): Settlement[] => {
@@ -259,6 +308,15 @@ export function useExpenseSplitter(recurringItems: RecurringItem[] = []) {
       .filter(s => s.amount > 0.01);
   }, [settlements, payments]);
 
+  // Clean up group data when a group is deleted
+  const clearGroupData = useCallback((gId: string) => {
+    setGroupsData(prev => {
+      const newData = { ...prev };
+      delete newData[gId];
+      return newData;
+    });
+  }, []);
+
   return {
     participants,
     expenses,
@@ -278,5 +336,6 @@ export function useExpenseSplitter(recurringItems: RecurringItem[] = []) {
     removeExpense,
     addPayment,
     removePayment,
+    clearGroupData,
   };
 }

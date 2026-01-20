@@ -14,11 +14,31 @@ export const defaultRecurringItems = [
   { name: "Academia", category: "health", icon: "Dumbbell" },
 ];
 
-export function useRecurringItems() {
-  const [monthlyData, setMonthlyData] = useState<MonthlyRecurringData[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string>(
-    format(new Date(), "yyyy-MM")
-  );
+interface GroupRecurringData {
+  monthlyData: MonthlyRecurringData[];
+  selectedMonth: string;
+}
+
+export function useRecurringItems(groupId: string | null) {
+  // Store data per group
+  const [groupsRecurringData, setGroupsRecurringData] = useState<Record<string, GroupRecurringData>>({});
+
+  // Get current group's data or defaults
+  const currentGroupData = useMemo((): GroupRecurringData => {
+    if (!groupId) return { monthlyData: [], selectedMonth: format(new Date(), "yyyy-MM") };
+    return groupsRecurringData[groupId] || { monthlyData: [], selectedMonth: format(new Date(), "yyyy-MM") };
+  }, [groupsRecurringData, groupId]);
+
+  const { monthlyData, selectedMonth } = currentGroupData;
+
+  // Helper to update current group's data
+  const updateGroupRecurringData = useCallback((updater: (data: GroupRecurringData) => GroupRecurringData) => {
+    if (!groupId) return;
+    setGroupsRecurringData(prev => ({
+      ...prev,
+      [groupId]: updater(prev[groupId] || { monthlyData: [], selectedMonth: format(new Date(), "yyyy-MM") })
+    }));
+  }, [groupId]);
 
   // Obtém os itens do mês selecionado
   const currentMonthItems = useMemo(() => {
@@ -35,39 +55,43 @@ export function useRecurringItems() {
         status: "pending",
       };
 
-      setMonthlyData((prev) => {
-        const existingMonthIndex = prev.findIndex(
-          (d) => d.month === selectedMonth
+      updateGroupRecurringData((data) => {
+        const existingMonthIndex = data.monthlyData.findIndex(
+          (d) => d.month === data.selectedMonth
         );
 
         if (existingMonthIndex >= 0) {
-          const updated = [...prev];
-          updated[existingMonthIndex] = {
-            ...updated[existingMonthIndex],
-            items: [...updated[existingMonthIndex].items, newItem],
+          const updatedMonthlyData = [...data.monthlyData];
+          updatedMonthlyData[existingMonthIndex] = {
+            ...updatedMonthlyData[existingMonthIndex],
+            items: [...updatedMonthlyData[existingMonthIndex].items, newItem],
           };
-          return updated;
+          return { ...data, monthlyData: updatedMonthlyData };
         }
 
-        return [...prev, { month: selectedMonth, items: [newItem] }];
+        return {
+          ...data,
+          monthlyData: [...data.monthlyData, { month: data.selectedMonth, items: [newItem] }],
+        };
       });
 
       return newItem.id;
     },
-    [selectedMonth]
+    [updateGroupRecurringData]
   );
 
   // Remove um item recorrente
   const removeRecurringItem = useCallback(
     (itemId: string) => {
-      setMonthlyData((prev) =>
-        prev.map((monthData) => ({
+      updateGroupRecurringData((data) => ({
+        ...data,
+        monthlyData: data.monthlyData.map((monthData) => ({
           ...monthData,
           items: monthData.items.filter((item) => item.id !== itemId),
-        }))
-      );
+        })),
+      }));
     },
-    []
+    [updateGroupRecurringData]
   );
 
   // Atualiza o status de um item
@@ -78,81 +102,111 @@ export function useRecurringItems() {
       paidAmount?: number,
       paidBy?: string
     ) => {
-      setMonthlyData((prev) =>
-        prev.map((monthData) => ({
+      updateGroupRecurringData((data) => ({
+        ...data,
+        monthlyData: data.monthlyData.map((monthData) => ({
           ...monthData,
           items: monthData.items.map((item) =>
             item.id === itemId
               ? { ...item, status, paidAmount, paidBy }
               : item
           ),
-        }))
-      );
+        })),
+      }));
     },
-    []
+    [updateGroupRecurringData]
   );
 
   // Atualiza um item
   const updateRecurringItem = useCallback(
     (itemId: string, updates: Partial<RecurringItem>) => {
-      setMonthlyData((prev) =>
-        prev.map((monthData) => ({
+      updateGroupRecurringData((data) => ({
+        ...data,
+        monthlyData: data.monthlyData.map((monthData) => ({
           ...monthData,
           items: monthData.items.map((item) =>
             item.id === itemId ? { ...item, ...updates } : item
           ),
-        }))
-      );
+        })),
+      }));
     },
-    []
+    [updateGroupRecurringData]
   );
 
   // Copia itens de um mês para outro (para itens recorrentes)
   const copyItemsToMonth = useCallback(
     (fromMonth: string, toMonth: string) => {
-      const fromData = monthlyData.find((d) => d.month === fromMonth);
-      if (!fromData) return;
+      updateGroupRecurringData((data) => {
+        const fromData = data.monthlyData.find((d) => d.month === fromMonth);
+        if (!fromData) return data;
 
-      const copiedItems: RecurringItem[] = fromData.items.map((item) => ({
-        ...item,
-        id: crypto.randomUUID(),
-        status: "pending" as RecurringItemStatus,
-        paidAmount: undefined,
-        paidBy: undefined,
-      }));
+        const copiedItems: RecurringItem[] = fromData.items.map((item) => ({
+          ...item,
+          id: crypto.randomUUID(),
+          status: "pending" as RecurringItemStatus,
+          paidAmount: undefined,
+          paidBy: undefined,
+        }));
 
-      setMonthlyData((prev) => {
-        const existingIndex = prev.findIndex((d) => d.month === toMonth);
+        const existingIndex = data.monthlyData.findIndex((d) => d.month === toMonth);
         if (existingIndex >= 0) {
-          const updated = [...prev];
-          updated[existingIndex] = {
-            ...updated[existingIndex],
-            items: [...updated[existingIndex].items, ...copiedItems],
+          const updatedMonthlyData = [...data.monthlyData];
+          updatedMonthlyData[existingIndex] = {
+            ...updatedMonthlyData[existingIndex],
+            items: [...updatedMonthlyData[existingIndex].items, ...copiedItems],
           };
-          return updated;
+          return { ...data, monthlyData: updatedMonthlyData };
         }
-        return [...prev, { month: toMonth, items: copiedItems }];
+        return {
+          ...data,
+          monthlyData: [...data.monthlyData, { month: toMonth, items: copiedItems }],
+        };
       });
     },
-    [monthlyData]
+    [updateGroupRecurringData]
   );
 
   // Inicializa mês com itens do mês anterior se vazio
   const initializeMonth = useCallback(
     (month: string) => {
-      const existingData = monthlyData.find((d) => d.month === month);
-      if (existingData && existingData.items.length > 0) return;
+      updateGroupRecurringData((data) => {
+        const existingData = data.monthlyData.find((d) => d.month === month);
+        if (existingData && existingData.items.length > 0) return data;
 
-      // Busca o mês anterior mais próximo com itens
-      const sortedMonths = monthlyData
-        .filter((d) => d.month < month && d.items.length > 0)
-        .sort((a, b) => b.month.localeCompare(a.month));
+        // Busca o mês anterior mais próximo com itens
+        const sortedMonths = data.monthlyData
+          .filter((d) => d.month < month && d.items.length > 0)
+          .sort((a, b) => b.month.localeCompare(a.month));
 
-      if (sortedMonths.length > 0) {
-        copyItemsToMonth(sortedMonths[0].month, month);
-      }
+        if (sortedMonths.length > 0) {
+          const fromData = sortedMonths[0];
+          const copiedItems: RecurringItem[] = fromData.items.map((item) => ({
+            ...item,
+            id: crypto.randomUUID(),
+            status: "pending" as RecurringItemStatus,
+            paidAmount: undefined,
+            paidBy: undefined,
+          }));
+
+          const existingIndex = data.monthlyData.findIndex((d) => d.month === month);
+          if (existingIndex >= 0) {
+            const updatedMonthlyData = [...data.monthlyData];
+            updatedMonthlyData[existingIndex] = {
+              ...updatedMonthlyData[existingIndex],
+              items: [...updatedMonthlyData[existingIndex].items, ...copiedItems],
+            };
+            return { ...data, monthlyData: updatedMonthlyData };
+          }
+          return {
+            ...data,
+            monthlyData: [...data.monthlyData, { month, items: copiedItems }],
+          };
+        }
+
+        return data;
+      });
     },
-    [monthlyData, copyItemsToMonth]
+    [updateGroupRecurringData]
   );
 
   // Calcula totais do mês
@@ -170,21 +224,68 @@ export function useRecurringItems() {
     return { total, paid, partial, pending };
   }, [currentMonthItems]);
 
+  // Set selected month
+  const setSelectedMonth = useCallback((month: string) => {
+    updateGroupRecurringData((data) => ({
+      ...data,
+      selectedMonth: month,
+    }));
+  }, [updateGroupRecurringData]);
+
   // Navega para o próximo mês
   const goToNextMonth = useCallback(() => {
-    const current = parse(selectedMonth, "yyyy-MM", new Date());
-    current.setMonth(current.getMonth() + 1);
-    const newMonth = format(current, "yyyy-MM");
-    setSelectedMonth(newMonth);
-    initializeMonth(newMonth);
-  }, [selectedMonth, initializeMonth]);
+    updateGroupRecurringData((data) => {
+      const current = parse(data.selectedMonth, "yyyy-MM", new Date());
+      current.setMonth(current.getMonth() + 1);
+      const newMonth = format(current, "yyyy-MM");
+      
+      // Check if we need to initialize the new month
+      const existingData = data.monthlyData.find((d) => d.month === newMonth);
+      if (!existingData || existingData.items.length === 0) {
+        // Find previous month with items
+        const sortedMonths = data.monthlyData
+          .filter((d) => d.month < newMonth && d.items.length > 0)
+          .sort((a, b) => b.month.localeCompare(a.month));
+
+        if (sortedMonths.length > 0) {
+          const fromData = sortedMonths[0];
+          const copiedItems: RecurringItem[] = fromData.items.map((item) => ({
+            ...item,
+            id: crypto.randomUUID(),
+            status: "pending" as RecurringItemStatus,
+            paidAmount: undefined,
+            paidBy: undefined,
+          }));
+
+          return {
+            ...data,
+            selectedMonth: newMonth,
+            monthlyData: [...data.monthlyData, { month: newMonth, items: copiedItems }],
+          };
+        }
+      }
+      
+      return { ...data, selectedMonth: newMonth };
+    });
+  }, [updateGroupRecurringData]);
 
   // Navega para o mês anterior
   const goToPreviousMonth = useCallback(() => {
-    const current = parse(selectedMonth, "yyyy-MM", new Date());
-    current.setMonth(current.getMonth() - 1);
-    setSelectedMonth(format(current, "yyyy-MM"));
-  }, [selectedMonth]);
+    updateGroupRecurringData((data) => {
+      const current = parse(data.selectedMonth, "yyyy-MM", new Date());
+      current.setMonth(current.getMonth() - 1);
+      return { ...data, selectedMonth: format(current, "yyyy-MM") };
+    });
+  }, [updateGroupRecurringData]);
+
+  // Clean up group data when a group is deleted
+  const clearGroupRecurringData = useCallback((gId: string) => {
+    setGroupsRecurringData(prev => {
+      const newData = { ...prev };
+      delete newData[gId];
+      return newData;
+    });
+  }, []);
 
   return {
     selectedMonth,
@@ -200,5 +301,6 @@ export function useRecurringItems() {
     goToNextMonth,
     goToPreviousMonth,
     monthlyData,
+    clearGroupRecurringData,
   };
 }
