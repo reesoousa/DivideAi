@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
-import { UserPlus, X, Edit2, Check, Share2, Image, Palette, Plus } from "lucide-react";
-import { Participant } from "@/types/expense";
+import { UserPlus, X, Edit2, Check, Share2, Image, Palette, Plus, Key } from "lucide-react";
+import { Participant, PixKey, PixKeyType } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PixKeyManager } from "./PixKeyManager";
 
 interface ParticipantsListProps {
   participants: Participant[];
@@ -384,19 +385,67 @@ export function ParticipantsList({
                     </Button>
                   </div>
                 ) : (
-                  <>
-                    <div className="flex items-center gap-3">
+                <>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       {renderAvatar(participant)}
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-medium text-foreground">{participant.name}</p>
                         {participant.role && (
                           <p className="text-xs text-muted-foreground">
                             {getRoleLabel(participant.role)}
                           </p>
                         )}
+                        {/* Pix Keys Display */}
+                        {participant.pixKeys && participant.pixKeys.length > 0 && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Key className="h-3 w-3 text-primary" />
+                            <span className="text-xs text-primary">
+                              {participant.pixKeys.length} chave{participant.pixKeys.length > 1 ? 's' : ''} Pix
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      {/* Add Pix Key Button */}
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <button
+                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-primary active:bg-muted/50 rounded-lg transition-colors"
+                          >
+                            <Key className="h-4 w-4" />
+                          </button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Chaves Pix de {participant.name}</DialogTitle>
+                            <DialogDescription>
+                              Gerencie as chaves Pix para receber pagamentos
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="py-4">
+                            <PixKeyManager
+                              pixKeys={participant.pixKeys || []}
+                              onAddPixKey={(type, key, label) => {
+                                const newKey: PixKey = {
+                                  id: crypto.randomUUID(),
+                                  type,
+                                  key,
+                                  label,
+                                };
+                                onUpdateParticipant(participant.id, {
+                                  pixKeys: [...(participant.pixKeys || []), newKey],
+                                });
+                              }}
+                              onRemovePixKey={(keyId) => {
+                                onUpdateParticipant(participant.id, {
+                                  pixKeys: (participant.pixKeys || []).filter((k) => k.id !== keyId),
+                                });
+                              }}
+                            />
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                       <button
                         onClick={() => handleStartEdit(participant)}
                         className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-primary active:bg-muted/50 rounded-lg transition-colors"

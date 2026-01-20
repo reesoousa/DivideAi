@@ -1,3 +1,12 @@
+export type PixKeyType = 'cpf' | 'cnpj' | 'email' | 'phone' | 'random';
+
+export interface PixKey {
+  id: string;
+  type: PixKeyType;
+  key: string;
+  label?: string; // Optional label like "Conta Principal"
+}
+
 export interface Participant {
   id: string;
   name: string;
@@ -6,6 +15,7 @@ export interface Participant {
   avatarImage?: string;
   role?: string;
   participationPercentage?: number;
+  pixKeys?: PixKey[];
 }
 
 export interface ExpenseCategory {
