@@ -246,7 +246,7 @@ export function ParticipantsList({
                         </TabsTrigger>
                       </TabsList>
                       <TabsContent value="color" className="mt-3">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 sm:gap-2">
                           {avatarColorOptions.map((color) => (
                             <button
                               key={color.value}
@@ -255,10 +255,10 @@ export function ParticipantsList({
                                 setSelectedColor(color.value);
                                 setUseCustomColor(false);
                               }}
-                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                              className={`w-11 h-11 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all active:scale-95 ${
                                 selectedColor === color.value && !useCustomColor
                                   ? "ring-2 ring-primary ring-offset-2 ring-offset-background" 
-                                  : "hover:scale-110"
+                                  : "hover:scale-105"
                               }`}
                               style={{ backgroundColor: color.value }}
                             >
@@ -274,10 +274,10 @@ export function ParticipantsList({
                               setUseCustomColor(true);
                               colorPickerRef.current?.click();
                             }}
-                            className={`w-10 h-10 rounded-full border-2 border-dashed border-border flex items-center justify-center transition-all ${
+                            className={`w-11 h-11 sm:w-10 sm:h-10 rounded-full border-2 border-dashed border-border flex items-center justify-center transition-all active:scale-95 ${
                               useCustomColor
                                 ? "ring-2 ring-primary ring-offset-2 ring-offset-background" 
-                                : "hover:scale-110 hover:border-primary"
+                                : "hover:scale-105 hover:border-primary"
                             }`}
                             style={useCustomColor ? { backgroundColor: customColor } : undefined}
                           >
@@ -396,16 +396,16 @@ export function ParticipantsList({
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleStartEdit(participant)}
-                        className="p-1 text-muted-foreground hover:text-primary transition-colors"
+                        className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-primary active:bg-muted/50 rounded-lg transition-colors"
                       >
                         <Edit2 className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => onRemoveParticipant(participant.id)}
-                        className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                        className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive active:bg-destructive/10 rounded-lg transition-colors"
                       >
                         <X className="h-4 w-4" />
                       </button>

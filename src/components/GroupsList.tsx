@@ -118,16 +118,17 @@ export function GroupsList({
                 <Sparkles className="h-4 w-4 text-primary" />
                 <Label className="font-medium">Ícone do grupo</Label>
               </div>
-              <div className="grid grid-cols-8 gap-2">
+              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
                 {availableIcons.map((icon) => (
                   <button
                     key={icon.name}
                     type="button"
                     onClick={() => setSelectedIcon(icon.name)}
                     className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+                      // Larger touch target for mobile
+                      "w-11 h-11 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-all active:scale-95",
                       selectedIcon === icon.name
-                        ? "bg-primary text-primary-foreground shadow-md scale-110"
+                        ? "bg-primary text-primary-foreground shadow-md scale-105"
                         : "bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/30"
                     )}
                     title={icon.label}
@@ -207,21 +208,21 @@ export function GroupsList({
             {groups.map((group) => (
               <div
                 key={group.id}
-                className="flex items-center gap-3 p-3 rounded-xl bg-background/50 hover:bg-background/80 transition-colors cursor-pointer group border border-border/30"
+                className="flex items-center gap-3 p-3 sm:p-3 rounded-xl bg-background/50 hover:bg-background/80 active:bg-background transition-colors cursor-pointer group border border-border/30"
                 onClick={() => onSelectGroup(group.id)}
               >
                 <div
-                  className={`w-12 h-12 rounded-xl ${group.color} flex items-center justify-center shadow-sm`}
+                  className={`w-12 h-12 rounded-xl ${group.color} flex items-center justify-center shadow-sm flex-shrink-0`}
                 >
                   <LucideIcon name={group.icon} className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-medium text-foreground truncate">
                       {group.name}
                     </p>
                     {group.isRecurring && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30 flex-shrink-0">
                         <Repeat className="h-2.5 w-2.5 mr-0.5" />
                         Recorrente
                       </Badge>
@@ -233,11 +234,11 @@ export function GroupsList({
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-10 w-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     onClick={(e) => {
                       e.stopPropagation();
                       onRemoveGroup(group.id);

@@ -350,12 +350,12 @@ export function RecurringItemsList({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       {item.status !== "paid" && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-10 w-10"
                           onClick={() => openPaymentDialog(item)}
                         >
                           <Check className="h-4 w-4 text-emerald-600" />
@@ -365,7 +365,7 @@ export function RecurringItemsList({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-10 w-10"
                           onClick={() => onUpdateStatus(item.id, "pending")}
                         >
                           <Clock className="h-4 w-4 text-amber-600" />
@@ -374,7 +374,7 @@ export function RecurringItemsList({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-10 w-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                         onClick={() => onRemoveItem(item.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -455,7 +455,7 @@ export function RecurringItemsList({
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
                   onClick={handlePaymentSubmit} 
                   className="flex-1"
@@ -466,6 +466,7 @@ export function RecurringItemsList({
                 <Button
                   variant="outline"
                   onClick={() => setPaymentDialogItem(null)}
+                  className="flex-1 sm:flex-none"
                 >
                   Cancelar
                 </Button>

@@ -131,7 +131,8 @@ export function SettlementsWithPayments({
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                      {/* Mobile-friendly layout: stack on small screens */}
+                      <div className="flex items-center gap-2 flex-wrap">
                         <ParticipantAvatar 
                           participant={getParticipantById(participants, settlement.from)} 
                           size="md"
@@ -139,7 +140,7 @@ export function SettlementsWithPayments({
                         <span className="font-medium text-foreground text-sm">
                           {getParticipantName(settlement.from)}
                         </span>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <ParticipantAvatar 
                           participant={getParticipantById(participants, settlement.to)} 
                           size="md"
@@ -150,7 +151,7 @@ export function SettlementsWithPayments({
                       </div>
                     </div>
                     
-                    <div className="mt-3 flex items-center justify-between">
+                    <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-muted-foreground">Total:</span>
@@ -177,9 +178,9 @@ export function SettlementsWithPayments({
                         </div>
                       ) : (
                         <Button
-                          size="sm"
+                          size="default"
                           onClick={() => handleOpenPayment(settlement)}
-                          className="gap-1"
+                          className="gap-2 w-full sm:w-auto"
                         >
                           <CreditCard className="h-4 w-4" />
                           Registrar Pagamento
@@ -247,11 +248,11 @@ export function SettlementsWithPayments({
             </div>
           )}
           
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>
+          <DialogFooter className="gap-2 flex-col-reverse sm:flex-row">
+            <Button variant="outline" onClick={() => setPaymentDialogOpen(false)} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button onClick={handleConfirmPayment}>
+            <Button onClick={handleConfirmPayment} className="w-full sm:w-auto">
               Confirmar Pagamento
             </Button>
           </DialogFooter>

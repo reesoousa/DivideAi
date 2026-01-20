@@ -98,7 +98,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex flex-col safe-top">
       {/* Header */}
       <header className="px-4 py-6 text-center">
         <div className="flex items-center justify-center mb-2">

@@ -243,7 +243,7 @@ const Index = () => {
         </div>
       </header>
       
-      <main className="max-w-lg mx-auto px-4 py-6 pb-28">
+      <main className="max-w-lg mx-auto px-4 py-6 pb-32">
         {isRecurringGroup ? (
           <RecurringSummaryCard
             totalMonthly={monthlyTotals.total}
@@ -259,16 +259,16 @@ const Index = () => {
           />
         )}
 
-        <div className="mt-6">
+        <div className="mt-6 animate-fade-in">
           {renderContent()}
         </div>
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="max-w-lg mx-auto px-4 pb-4">
-          <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg px-1 py-1">
-            <div className="flex items-center justify-around">
+      {/* Bottom Navigation - Fixed with safe area */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 safe-bottom">
+        <div className="max-w-lg mx-auto px-3 pb-3 sm:px-4 sm:pb-4">
+          <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg">
+            <div className="flex items-center justify-around px-1 py-1">
               {isRecurringGroup && (
                 <BottomNavItem
                   icon={Repeat}
