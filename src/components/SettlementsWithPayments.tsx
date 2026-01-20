@@ -1,17 +1,8 @@
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, CreditCard, Upload, QrCode } from "lucide-react";
+import { ArrowRight, CheckCircle2, CreditCard } from "lucide-react";
 import { Settlement, Participant, Payment } from "@/types/expense";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { ParticipantAvatar, getParticipantById } from "@/components/ParticipantAvatar";
 import { PixPaymentModal } from "./PixPaymentModal";
 
@@ -45,15 +36,8 @@ export function SettlementsWithPayments({
   groupName,
   onAddPayment,
 }: SettlementsWithPaymentsProps) {
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedSettlement, setSelectedSettlement] = useState<Settlement | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState("");
-  const [receiptUrl, setReceiptUrl] = useState("");
-  const [note, setNote] = useState("");
-  
-  // Pix modal state
-  const [pixModalOpen, setPixModalOpen] = useState(false);
-  const [pixSettlement, setPixSettlement] = useState<Settlement | null>(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   const getParticipantName = (id: string) => {
     return participants.find((p) => p.id === id)?.name || "Desconhecido";
@@ -77,28 +61,27 @@ export function SettlementsWithPayments({
   };
 
   const handleOpenPayment = (settlement: Settlement) => {
-    setSelectedSettlement(settlement);
-    setPaymentAmount(getRemainingAmount(settlement).toFixed(2));
-    setReceiptUrl("");
-    setNote("");
-    setPaymentDialogOpen(true);
+    // Create a settlement with remaining amount for the modal
+    const remainingAmount = getRemainingAmount(settlement);
+    setSelectedSettlement({
+      ...settlement,
+      amount: remainingAmount
+    });
+    setPaymentModalOpen(true);
   };
 
-  const handleConfirmPayment = () => {
-    if (!selectedSettlement || !paymentAmount) return;
+  const handleConfirmPayment = (amount: number, receiptUrl?: string, note?: string) => {
+    if (!selectedSettlement) return;
     
-    const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || amount <= 0) return;
-
     onAddPayment(
       selectedSettlement.from,
       selectedSettlement.to,
       amount,
-      receiptUrl || undefined,
-      note || undefined
+      receiptUrl,
+      note
     );
     
-    setPaymentDialogOpen(false);
+    setPaymentModalOpen(false);
     setSelectedSettlement(null);
   };
 
@@ -184,29 +167,14 @@ export function SettlementsWithPayments({
                           Quitado
                         </div>
                       ) : (
-                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                          {/* Pix Payment Button */}
-                          <Button
-                            size="default"
-                            variant="outline"
-                            onClick={() => {
-                              setPixSettlement(settlement);
-                              setPixModalOpen(true);
-                            }}
-                            className="gap-2 w-full sm:w-auto"
-                          >
-                            <QrCode className="h-4 w-4" />
-                            <span className="hidden sm:inline">Pagar com</span> Pix
-                          </Button>
-                          <Button
-                            size="default"
-                            onClick={() => handleOpenPayment(settlement)}
-                            className="gap-2 w-full sm:w-auto"
-                          >
-                            <CreditCard className="h-4 w-4" />
-                            <span className="hidden sm:inline">Registrar</span> Pagamento
-                          </Button>
-                        </div>
+                        <Button
+                          size="default"
+                          onClick={() => handleOpenPayment(settlement)}
+                          className="gap-2 w-full sm:w-auto"
+                        >
+                          <CreditCard className="h-4 w-4" />
+                          Realizar Pagamento
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -217,89 +185,15 @@ export function SettlementsWithPayments({
         </CardContent>
       </Card>
 
-      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Registrar Pagamento</DialogTitle>
-          </DialogHeader>
-          
-          {selectedSettlement && (
-            <div className="space-y-4">
-              <div className="p-3 bg-accent/50 rounded-lg text-sm">
-                <span className="font-medium">{getParticipantName(selectedSettlement.from)}</span>
-                <span className="text-muted-foreground"> pagando para </span>
-                <span className="font-medium">{getParticipantName(selectedSettlement.to)}</span>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="amount">Valor do Pagamento *</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  placeholder="0,00"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="receiptUrl" className="flex items-center gap-1">
-                  <Upload className="h-3 w-3" />
-                  URL do Comprovante (opcional)
-                </Label>
-                <Input
-                  id="receiptUrl"
-                  type="url"
-                  placeholder="https://..."
-                  value={receiptUrl}
-                  onChange={(e) => setReceiptUrl(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="note">Observação (opcional)</Label>
-                <Input
-                  id="note"
-                  placeholder="Ex: Transferência PIX"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter className="gap-2 flex-col-reverse sm:flex-row">
-            <Button variant="outline" onClick={() => setPaymentDialogOpen(false)} className="w-full sm:w-auto">
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirmPayment} className="w-full sm:w-auto">
-              Confirmar Pagamento
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Pix Payment Modal */}
-      {pixSettlement && (
+      {/* Unified Payment Modal */}
+      {selectedSettlement && (
         <PixPaymentModal
-          open={pixModalOpen}
-          onOpenChange={setPixModalOpen}
-          settlement={pixSettlement}
+          open={paymentModalOpen}
+          onOpenChange={setPaymentModalOpen}
+          settlement={selectedSettlement}
           participants={participants}
           groupName={groupName}
-          onMarkAsPaid={() => {
-            onAddPayment(
-              pixSettlement.from,
-              pixSettlement.to,
-              getRemainingAmount(pixSettlement),
-              undefined,
-              "Pagamento via Pix"
-            );
-            setPixModalOpen(false);
-            setPixSettlement(null);
-          }}
+          onConfirmPayment={handleConfirmPayment}
         />
       )}
     </>
