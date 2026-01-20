@@ -522,7 +522,7 @@ const Index = () => {
       {/* Bottom Navigation - Fixed with safe area */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 safe-bottom">
         <div className="max-w-lg mx-auto px-3 pb-3 sm:px-4 sm:pb-4">
-          <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg">
+          <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg">
             <div className="flex items-center justify-around px-1 py-1">
               {isRecurringGroup && (
                 <BottomNavItem

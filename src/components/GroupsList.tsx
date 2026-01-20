@@ -115,7 +115,7 @@ export function GroupsList({
       </CardHeader>
       <CardContent className="space-y-3">
         {showForm && (
-          <div className="bg-muted/30 rounded-xl p-4 space-y-4 border border-border/30">
+          <div className="bg-muted/30 rounded-lg p-4 space-y-4 border border-border/30">
             <Input
               placeholder="Nome do grupo (ex: Casa, Viagem SP)"
               value={newGroupName}
@@ -275,13 +275,13 @@ export function GroupsList({
               <div
                 key={group.id}
                 className={cn(
-                  "flex items-center gap-3 p-3 sm:p-3 rounded-xl bg-background/50 hover:bg-background/80 active:bg-background transition-colors cursor-pointer group border border-border/30",
+                  "flex items-center gap-3 p-3 rounded-lg bg-background/50 hover:bg-background/80 active:bg-background transition-colors cursor-pointer group border border-border/30",
                   deletingId === group.id && "opacity-50 pointer-events-none"
                 )}
                 onClick={() => onSelectGroup(group.id)}
               >
                 <div
-                  className={`w-12 h-12 rounded-xl ${group.color} flex items-center justify-center shadow-sm flex-shrink-0`}
+                  className={`w-12 h-12 rounded-lg ${group.color} flex items-center justify-center shadow-sm flex-shrink-0`}
                 >
                   <LucideIcon name={group.icon} className="h-6 w-6 text-primary-foreground" />
                 </div>

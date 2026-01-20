@@ -114,7 +114,7 @@ export function SettlementsWithPayments({
                 return (
                   <div
                     key={index}
-                    className={`p-4 rounded-xl border transition-all ${
+                    className={`p-4 rounded-lg border transition-all ${
                       fullyPaid
                         ? "bg-green-500/10 border-green-500/30"
                         : "bg-accent/50 border-border/30"

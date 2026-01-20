@@ -204,7 +204,7 @@ export function RecurringItemsList({
 
       <CardContent className="space-y-3">
         {showForm && (
-          <div className="bg-muted/30 rounded-xl p-4 space-y-3 border border-border/30">
+          <div className="bg-muted/30 rounded-lg p-4 space-y-3 border border-border/30">
             {/* Quick add buttons */}
             <div className="flex flex-wrap gap-2">
               {defaultRecurringItems.map((item) => (
@@ -300,7 +300,7 @@ export function RecurringItemsList({
                   <div
                     key={item.id}
                     className={cn(
-                      "flex items-center gap-3 p-3 rounded-xl border group",
+                      "flex items-center gap-3 p-3 rounded-lg border group",
                       isIncludedInSettlements 
                         ? "bg-emerald-500/5 border-emerald-500/20" 
                         : "bg-background/50 border-border/30"
