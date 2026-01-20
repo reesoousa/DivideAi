@@ -21,6 +21,7 @@ import { useSupabaseExpenses } from "@/hooks/useSupabaseExpenses";
 import { useSupabasePayments } from "@/hooks/useSupabasePayments";
 import { useSupabaseRecurringItems } from "@/hooks/useSupabaseRecurringItems";
 import { BottomNavItem } from "@/components/BottomNavItem";
+import { useGroupMembers } from "@/hooks/useGroupMembers";
 import GroupSettings from "@/pages/GroupSettings";
 import { Users, Receipt, BarChart3, ArrowLeft, History, Repeat, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,13 @@ const Index = () => {
     removeParticipant,
     refresh: refreshParticipants,
   } = useSupabaseParticipants(selectedGroupId);
+
+  // Group members hook for invite functionality
+  const {
+    invites,
+    generateInviteLink,
+    isLoading: isLoadingMembers,
+  } = useGroupMembers(selectedGroupId);
 
   // Recurring items hook
   const {
@@ -297,6 +305,13 @@ const Index = () => {
               onAddParticipant={addParticipant}
               onUpdateParticipant={updateParticipant}
               onRemoveParticipant={removeParticipant}
+              isAdmin={isAdmin || isOwner}
+              invites={invites}
+              onGenerateInvite={async () => {
+                const link = await generateInviteLink({ expiresInDays: 7 });
+                return link;
+              }}
+              isGeneratingInvite={isLoadingMembers}
             />
           </div>
         );

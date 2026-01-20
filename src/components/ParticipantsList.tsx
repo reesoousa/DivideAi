@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
-import { UserPlus, X, Edit2, Check, Share2, Image, Palette, Plus, Key } from "lucide-react";
-import { Participant, PixKey, PixKeyType } from "@/types/expense";
+import { UserPlus, X, Edit2, Check, Share2, Image, Palette, Plus, Key, Link as LinkIcon, Copy, Loader2 } from "lucide-react";
+import { Participant, PixKey, PixKeyType, GroupInvite } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PixKeyManager } from "./PixKeyManager";
+import { toast } from "sonner";
 
 interface ParticipantsListProps {
   participants: Participant[];
@@ -27,6 +28,11 @@ interface ParticipantsListProps {
   ) => void;
   onUpdateParticipant: (id: string, updates: Partial<Participant>) => void;
   onRemoveParticipant: (id: string) => void;
+  // New invite props
+  isAdmin?: boolean;
+  invites?: GroupInvite[];
+  onGenerateInvite?: () => Promise<string | null>;
+  isGeneratingInvite?: boolean;
 }
 
 // 7 cores pré-definidas + opção de color picker
@@ -45,6 +51,10 @@ export function ParticipantsList({
   onAddParticipant,
   onUpdateParticipant,
   onRemoveParticipant,
+  isAdmin = false,
+  invites = [],
+  onGenerateInvite,
+  isGeneratingInvite = false,
 }: ParticipantsListProps) {
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
@@ -53,6 +63,7 @@ export function ParticipantsList({
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
   const [editName, setEditName] = useState("");
   const [editRole, setEditRole] = useState("");
+  const [copiedLink, setCopiedLink] = useState(false);
   
   // Avatar customization states
   const [avatarTab, setAvatarTab] = useState<string>("color");
@@ -113,21 +124,22 @@ export function ParticipantsList({
     }
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "Convite para grupo de gastos",
-          text: "Você foi convidado para participar de um grupo de divisão de gastos!",
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log("Compartilhamento cancelado");
-      }
-    } else {
-      // Fallback: copiar link
-      navigator.clipboard.writeText(window.location.href);
+  const handleGenerateAndCopyLink = async () => {
+    if (!onGenerateInvite) return;
+    
+    const link = await onGenerateInvite();
+    if (link) {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 3000);
     }
+  };
+
+  const handleCopyExistingLink = async (code: string) => {
+    const link = `${window.location.origin}/join/${code}`;
+    await navigator.clipboard.writeText(link);
+    setCopiedLink(true);
+    toast.success("Link copiado!");
+    setTimeout(() => setCopiedLink(false), 3000);
   };
 
   const getRoleLabel = (role?: string) => {
@@ -183,19 +195,76 @@ export function ParticipantsList({
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Convidar Participantes</DialogTitle>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Share2 className="h-5 w-5 text-primary" />
+                    Convidar Pessoas
+                  </DialogTitle>
                   <DialogDescription>
-                    Compartilhe o link do grupo para convidar outras pessoas
+                    {isAdmin 
+                      ? "Gere um link para convidar novas pessoas ao grupo"
+                      : "Solicite ao administrador um link de convite para adicionar pessoas"
+                    }
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                  <p className="text-sm text-muted-foreground">
-                    Convide pessoas para cadastrar gastos neste grupo. Login e sincronização em breve.
-                  </p>
-                  <Button onClick={handleShare} className="w-full">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Compartilhar Link
-                  </Button>
+                  {isAdmin && onGenerateInvite ? (
+                    <>
+                      <Button
+                        onClick={handleGenerateAndCopyLink}
+                        disabled={isGeneratingInvite}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        {isGeneratingInvite ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : copiedLink ? (
+                          <Check className="h-4 w-4 mr-2" />
+                        ) : (
+                          <LinkIcon className="h-4 w-4 mr-2" />
+                        )}
+                        {copiedLink ? "Link copiado!" : "Gerar link de convite"}
+                      </Button>
+
+                      {invites.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-sm text-muted-foreground">Links ativos</Label>
+                          {invites.map((invite) => (
+                            <div 
+                              key={invite.id}
+                              className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-mono truncate">
+                                  .../{invite.inviteCode}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {invite.useCount} uso(s)
+                                  {invite.expiresAt && ` • Expira em ${new Date(invite.expiresAt).toLocaleDateString()}`}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleCopyExistingLink(invite.inviteCode)}
+                                className="h-8 w-8"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground">
+                        Apenas administradores podem gerar links de convite.
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Peça ao administrador do grupo para compartilhar um link com você.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
