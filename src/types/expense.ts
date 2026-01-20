@@ -69,6 +69,30 @@ export interface Group {
   createdAt: Date;
   isRecurring: boolean;
   billingDay?: number; // Dia de cobrança mensal (1-31)
+  isOwner?: boolean; // Whether current user is the owner
+  isAdmin?: boolean; // Whether current user is admin
+  role?: 'owner' | 'admin' | 'member'; // User's role in the group
+}
+
+export interface GroupMember {
+  id: string;
+  userId: string;
+  groupId: string;
+  role: 'admin' | 'member';
+  joinedAt: Date;
+  displayName?: string;
+  avatarUrl?: string;
+}
+
+export interface GroupInvite {
+  id: string;
+  groupId: string;
+  inviteCode: string;
+  createdAt: Date;
+  expiresAt?: Date;
+  maxUses?: number;
+  useCount: number;
+  isActive: boolean;
 }
 
 export type RecurringItemStatus = 'pending' | 'paid' | 'partial';

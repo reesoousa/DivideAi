@@ -71,6 +71,82 @@ export type Database = {
           },
         ]
       }
+      group_invites: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          group_id: string
+          id: string
+          invite_code: string
+          is_active: boolean
+          max_uses: number | null
+          use_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          group_id: string
+          id?: string
+          invite_code: string
+          is_active?: boolean
+          max_uses?: number | null
+          use_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          group_id?: string
+          id?: string
+          invite_code?: string
+          is_active?: boolean
+          max_uses?: number | null
+          use_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_invites_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          role: Database["public"]["Enums"]["group_role"]
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["group_role"]
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["group_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups: {
         Row: {
           billing_day: number | null
@@ -345,6 +421,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      user_is_group_admin: { Args: { p_group_id: string }; Returns: boolean }
+      user_is_group_member: { Args: { p_group_id: string }; Returns: boolean }
       user_owns_group: { Args: { group_id: string }; Returns: boolean }
       user_owns_participant: {
         Args: { participant_id: string }
@@ -352,7 +430,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      group_role: "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -479,6 +557,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      group_role: ["admin", "member"],
+    },
   },
 } as const
