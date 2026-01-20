@@ -124,7 +124,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Add user as member
+    // Get user profile for display name and avatar
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("display_name, avatar_url, avatar_color")
+      .eq("user_id", user.id)
+      .single();
+
+    // Determine participant name - use profile display name, email, or fallback
+    const participantName = profile?.display_name || user.email?.split('@')[0] || 'Novo Membro';
+    
+    // Add user as member in group_members table
     const { error: memberError } = await supabaseAdmin
       .from("group_members")
       .insert({
@@ -139,6 +149,24 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Failed to join group" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Also add as participant in participants table (unified participant)
+    const { error: participantError } = await supabaseAdmin
+      .from("participants")
+      .insert({
+        group_id: invite.group_id,
+        user_id: user.id,
+        name: participantName,
+        avatar_type: profile?.avatar_url ? "image" : "color",
+        avatar_image: profile?.avatar_url || null,
+        avatar_color: profile?.avatar_color || "#64B5F6",
+        participation_percentage: 100,
+      });
+
+    if (participantError) {
+      console.error("Error adding participant:", participantError);
+      // Don't fail the whole operation, member was already added
     }
 
     // Increment use count

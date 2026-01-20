@@ -18,7 +18,7 @@ export function useSupabaseParticipants(groupId: string | null) {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch participants with pix keys
+  // Fetch participants with pix keys and sync with profiles for linked users
   const fetchParticipants = useCallback(async () => {
     if (!groupId) {
       setParticipants([]);
@@ -35,6 +35,23 @@ export function useSupabaseParticipants(groupId: string | null) {
 
       if (participantsError) throw participantsError;
 
+      // Get user_ids for linked participants to fetch their profiles
+      const userIds = (participantsData || [])
+        .filter((p) => p.user_id)
+        .map((p) => p.user_id);
+
+      let profilesData: any[] = [];
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url, avatar_color")
+          .in("user_id", userIds);
+        profilesData = profiles || [];
+      }
+
+      // Create a map for quick profile lookup
+      const profileMap = new Map(profilesData.map((p) => [p.user_id, p]));
+
       // Fetch pix keys for all participants
       const participantIds = (participantsData || []).map((p) => p.id);
       let pixKeysData: any[] = [];
@@ -49,7 +66,7 @@ export function useSupabaseParticipants(groupId: string | null) {
         pixKeysData = data || [];
       }
 
-      // Map participants with their pix keys
+      // Map participants with their pix keys and profile data
       const mappedParticipants: Participant[] = (participantsData || []).map((p) => {
         const pKeys = pixKeysData
           .filter((pk) => pk.participant_id === p.id)
@@ -60,15 +77,19 @@ export function useSupabaseParticipants(groupId: string | null) {
             label: pk.label || undefined,
           }));
 
+        // Get profile data for linked users (to sync name/avatar)
+        const profile = p.user_id ? profileMap.get(p.user_id) : null;
+
         return {
           id: p.id,
-          name: p.name,
-          avatar: p.avatar_color || avatarColors[0],
-          avatarType: p.avatar_type as "color" | "image",
-          avatarImage: p.avatar_image || undefined,
+          name: profile?.display_name || p.name,
+          avatar: profile?.avatar_color || p.avatar_color || avatarColors[0],
+          avatarType: (profile?.avatar_url ? "image" : p.avatar_type) as "color" | "image",
+          avatarImage: profile?.avatar_url || p.avatar_image || undefined,
           role: p.role || undefined,
           participationPercentage: p.participation_percentage ? Number(p.participation_percentage) : 100,
           pixKeys: pKeys.length > 0 ? pKeys : undefined,
+          userId: p.user_id || undefined, // Include user_id for reference
         };
       });
 
