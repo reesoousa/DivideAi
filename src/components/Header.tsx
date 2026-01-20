@@ -82,7 +82,7 @@ export function Header() {
                 <User className="h-4 w-4" />
                 Meu Perfil
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/profile")} className="gap-2 cursor-pointer">
+              <DropdownMenuItem onClick={() => navigate("/settings")} className="gap-2 cursor-pointer">
                 <Settings className="h-4 w-4" />
                 Configurações
               </DropdownMenuItem>
