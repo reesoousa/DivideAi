@@ -1,73 +1,44 @@
-# Welcome to your Lovable project
+DivideAí
 
-## Project info
+DivideAí é um aplicativo focado em facilitar a divisão de despesas entre pessoas, seja em situações pontuais (viagens, eventos, rolês) ou em contextos recorrentes (contas de casa, repúblicas, casais, famílias).
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+O objetivo do projeto é reduzir atrito, evitar confusão e trazer transparência para o momento mais sensível de qualquer grupo: o acerto de contas.
 
-## How can I edit this code?
+Ideia do produto
 
-There are several ways of editing your application.
+O app permite:
 
-**Use Lovable**
+Criar grupos de divisão de gastos
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+Adicionar participantes manualmente ou via link de convite
 
-Changes made via Lovable will be committed automatically to this repo.
+Registrar despesas e entender automaticamente quanto cada pessoa deve pagar
 
-**Use your preferred IDE**
+Trabalhar com grupos únicos e grupos recorrentes
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Visualizar acertos de contas de forma clara e justa
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Facilitar pagamentos com Pix (copia e cola)
 
-Follow these steps:
+Manter histórico e organização dos gastos ao longo do tempo
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Tudo isso com foco em clareza, consistência e boa experiência de uso, tanto no mobile quanto no desktop.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Abordagem de design e desenvolvimento
 
-# Step 3: Install the necessary dependencies.
-npm i
+Sou UX Designer, e este projeto foi desenvolvido com uma abordagem de vibe coding:
+uma combinação de visão de produto, decisões de UX bem fundamentadas e uso de IA como apoio no desenvolvimento.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+O foco não foi apenas “fazer funcionar”, mas:
 
-**Edit a file directly in GitHub**
+Pensar fluxos antes da implementação
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Evitar padrões confusos ou ambíguos
 
-**Use GitHub Codespaces**
+Garantir consistência entre telas e estados
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Priorizar usabilidade e legibilidade
 
-## What technologies are used for this project?
+Construir algo que pudesse evoluir como produto real
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+A IA foi utilizada como ferramenta de aceleração, não como substituta de pensamento crítico, design ou decisões de produto.
