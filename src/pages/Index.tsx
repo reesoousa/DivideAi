@@ -179,18 +179,35 @@ const Index = () => {
       shouldPayMap[p.id] = 0;
     });
 
+    const isPercentageMode = selectedGroup?.splitType === 'percentage';
+
     allExpenses.forEach((expense) => {
       const splitParticipants =
         expense.splitAmong && expense.splitAmong.length > 0
           ? expense.splitAmong
           : participants.map((p) => p.id);
 
-      const perPerson = expense.amount / splitParticipants.length;
-      splitParticipants.forEach((id) => {
-        if (shouldPayMap[id] !== undefined) {
-          shouldPayMap[id] += perPerson;
-        }
-      });
+      if (isPercentageMode && (!expense.splitAmong || expense.splitAmong.length === 0)) {
+        // Use percentage-based split for expenses not split among specific people
+        const totalPercentage = participants.reduce((sum, p) => sum + (p.participationPercentage || 100 / participants.length), 0);
+        
+        splitParticipants.forEach((id) => {
+          const participant = participants.find(p => p.id === id);
+          if (participant && shouldPayMap[id] !== undefined) {
+            const percentage = participant.participationPercentage || (100 / participants.length);
+            const normalizedPercentage = percentage / totalPercentage;
+            shouldPayMap[id] += expense.amount * normalizedPercentage;
+          }
+        });
+      } else {
+        // Equal split (default or when splitAmong is specified)
+        const perPerson = expense.amount / splitParticipants.length;
+        splitParticipants.forEach((id) => {
+          if (shouldPayMap[id] !== undefined) {
+            shouldPayMap[id] += perPerson;
+          }
+        });
+      }
     });
 
     return participants.map((p) => {
@@ -203,7 +220,7 @@ const Index = () => {
         balance: paid - shouldPay,
       };
     });
-  }, [participants, allExpenses, expensesByParticipant]);
+  }, [participants, allExpenses, expensesByParticipant, selectedGroup?.splitType]);
 
   const settlements = useMemo(() => {
     if (participants.length < 2) return [];
@@ -301,6 +318,7 @@ const Index = () => {
               balanceDetails={balanceDetails}
               settlements={settlements}
               totalExpenses={totalExpenses}
+              splitType={selectedGroup?.splitType}
             />
           </div>
         );
@@ -433,11 +451,19 @@ const Index = () => {
     return (
       <GroupSettings
         group={selectedGroup}
+        participants={participants.map(p => ({ 
+          id: p.id, 
+          name: p.name, 
+          participationPercentage: p.participationPercentage 
+        }))}
         onBack={() => setViewMode("main")}
         onUpdateGroup={updateGroup}
         onDeleteGroup={async (id) => {
           await removeGroup(id);
           setViewMode("main");
+        }}
+        onUpdateParticipantPercentage={async (id, percentage) => {
+          await updateParticipant(id, { participationPercentage: percentage });
         }}
       />
     );

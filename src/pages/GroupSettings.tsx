@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Group } from "@/types/expense";
 import { useGroupMembers } from "@/hooks/useGroupMembers";
@@ -35,29 +35,35 @@ import {
   User,
   Loader2,
   Share2,
+  Percent,
+  Equal,
 } from "lucide-react";
 import { LucideIcon } from "@/components/LucideIcon";
 import { toast } from "sonner";
 
-// Icon options for groups
+// Icon options for groups (16 icons for 4x4 grid)
 const iconOptions = [
   "Home", "Users", "Plane", "Utensils", "ShoppingCart", "Car", 
-  "Briefcase", "Heart", "Music", "Film", "Gamepad2", "Dumbbell",
-  "GraduationCap", "Tent", "PartyPopper", "Building2"
+  "Briefcase", "Heart", "Music", "Gamepad2", "Dumbbell",
+  "GraduationCap", "Tent", "PartyPopper", "Building2", "Wallet"
 ];
 
 interface GroupSettingsProps {
   group: Group;
+  participants: { id: string; name: string; participationPercentage?: number }[];
   onBack: () => void;
   onUpdateGroup: (id: string, updates: Partial<Group>) => Promise<void>;
   onDeleteGroup: (id: string) => Promise<void>;
+  onUpdateParticipantPercentage: (id: string, percentage: number) => Promise<void>;
 }
 
 export default function GroupSettings({ 
   group, 
+  participants,
   onBack, 
   onUpdateGroup,
   onDeleteGroup,
+  onUpdateParticipantPercentage,
 }: GroupSettingsProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -67,6 +73,7 @@ export default function GroupSettings({
     isLoading, 
     isAdmin, 
     isOwner,
+    ownerProfile,
     generateInviteLink,
     deactivateInvite,
     removeMember,
@@ -76,11 +83,25 @@ export default function GroupSettings({
   const [name, setName] = useState(group.name);
   const [description, setDescription] = useState(group.description || "");
   const [selectedIcon, setSelectedIcon] = useState(group.icon);
+  const [splitType, setSplitType] = useState<'equal' | 'percentage'>(group.splitType || 'equal');
+  const [percentages, setPercentages] = useState<Record<string, number>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Initialize percentages from participants
+  useEffect(() => {
+    const initial: Record<string, number> = {};
+    participants.forEach(p => {
+      initial[p.id] = p.participationPercentage ?? 100 / participants.length;
+    });
+    setPercentages(initial);
+  }, [participants]);
+
+  const totalPercentage = Object.values(percentages).reduce((sum, p) => sum + p, 0);
+  const isPercentageValid = Math.abs(totalPercentage - 100) < 0.01;
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -94,11 +115,42 @@ export default function GroupSettings({
         name: name.trim(),
         description: description.trim() || undefined,
         icon: selectedIcon,
+        splitType,
       });
+      
+      // If percentage mode, save each participant's percentage
+      if (splitType === 'percentage' && isPercentageValid) {
+        for (const [participantId, percentage] of Object.entries(percentages)) {
+          await onUpdateParticipantPercentage(participantId, percentage);
+        }
+      }
+      
       toast.success("Grupo atualizado!");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handlePercentageChange = (participantId: string, value: number) => {
+    setPercentages(prev => ({
+      ...prev,
+      [participantId]: Math.max(0, Math.min(100, value)),
+    }));
+  };
+
+  const distributeEqually = () => {
+    const equalPercentage = 100 / participants.length;
+    const newPercentages: Record<string, number> = {};
+    participants.forEach(p => {
+      newPercentages[p.id] = Math.round(equalPercentage * 100) / 100;
+    });
+    // Adjust last one to make sure sum is exactly 100
+    if (participants.length > 0) {
+      const sum = Object.values(newPercentages).reduce((a, b) => a + b, 0);
+      const lastId = participants[participants.length - 1].id;
+      newPercentages[lastId] += 100 - sum;
+    }
+    setPercentages(newPercentages);
   };
 
   const handleGenerateLink = async () => {
@@ -366,16 +418,22 @@ export default function GroupSettings({
               </div>
             ) : (
               <>
-                {/* Owner (shown separately) */}
+                {/* Owner (shown separately with profile) */}
                 <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                   <Avatar className="h-10 w-10">
+                    {ownerProfile?.avatarUrl ? (
+                      <AvatarImage src={ownerProfile.avatarUrl} />
+                    ) : null}
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      <Crown className="h-4 w-4" />
+                      {ownerProfile?.displayName 
+                        ? getInitials(ownerProfile.displayName)
+                        : <Crown className="h-4 w-4" />
+                      }
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">
-                      {isOwner ? "Você" : "Proprietário"}
+                      {isOwner ? "Você" : (ownerProfile?.displayName || "Proprietário")}
                     </p>
                     <div className="flex items-center gap-1">
                       <Badge variant="secondary" className="text-xs">
@@ -418,7 +476,7 @@ export default function GroupSettings({
                         </Badge>
                       </div>
                     </div>
-                    {isOwner && member.userId !== user?.id && (
+                    {(isOwner || isAdmin) && member.userId !== user?.id && (
                       <div className="flex items-center gap-1">
                         {member.role !== 'admin' && (
                           <Button
@@ -428,6 +486,16 @@ export default function GroupSettings({
                             className="text-xs"
                           >
                             Promover
+                          </Button>
+                        )}
+                        {member.role === 'admin' && isOwner && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => updateMemberRole(member.id, 'member')}
+                            className="text-xs text-muted-foreground"
+                          >
+                            Rebaixar
                           </Button>
                         )}
                         <Button
@@ -453,8 +521,107 @@ export default function GroupSettings({
           </CardContent>
         </Card>
 
-        {/* Danger Zone - Owner Only */}
-        {isOwner && (
+        {/* Split Type Section - Admin Only */}
+        {isAdmin && participants.length > 1 && (
+          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Percent className="h-5 w-5 text-primary" />
+                Forma de Divisão
+              </CardTitle>
+              <CardDescription>
+                Configure como as despesas serão divididas entre os participantes
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Split type toggle */}
+              <div className="flex gap-2">
+                <Button
+                  variant={splitType === 'equal' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setSplitType('equal')}
+                >
+                  <Equal className="h-4 w-4 mr-2" />
+                  Divisão Igual
+                </Button>
+                <Button
+                  variant={splitType === 'percentage' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setSplitType('percentage')}
+                >
+                  <Percent className="h-4 w-4 mr-2" />
+                  Por Porcentagem
+                </Button>
+              </div>
+
+              {splitType === 'percentage' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Defina a porcentagem de cada participante
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={distributeEqually}
+                      className="text-xs"
+                    >
+                      Distribuir igualmente
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {participants.map((participant) => (
+                      <div key={participant.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate text-sm">{participant.name}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            value={percentages[participant.id] || 0}
+                            onChange={(e) => handlePercentageChange(participant.id, parseFloat(e.target.value) || 0)}
+                            className="w-20 text-right"
+                          />
+                          <span className="text-sm text-muted-foreground">%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Total percentage indicator */}
+                  <div className={`p-3 rounded-lg ${isPercentageValid ? 'bg-green-500/10 border border-green-500/30' : 'bg-destructive/10 border border-destructive/30'}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Total:</span>
+                      <span className={`font-bold ${isPercentageValid ? 'text-green-600' : 'text-destructive'}`}>
+                        {totalPercentage.toFixed(1)}%
+                      </span>
+                    </div>
+                    {!isPercentageValid && (
+                      <p className="text-xs text-destructive mt-1">
+                        A soma das porcentagens deve ser exatamente 100%
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {splitType === 'equal' && (
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Cada participante paga uma parte igual das despesas.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Danger Zone - Owner or Admin */}
+        {(isOwner || isAdmin) && (
           <Card className="border-destructive/30 bg-card/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg text-destructive">

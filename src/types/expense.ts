@@ -70,6 +70,7 @@ export interface Group {
   createdAt: Date;
   isRecurring: boolean;
   billingDay?: number; // Dia de cobrança mensal (1-31)
+  splitType?: 'equal' | 'percentage'; // Type of expense splitting
   isOwner?: boolean; // Whether current user is the owner
   isAdmin?: boolean; // Whether current user is admin
   role?: 'owner' | 'admin' | 'member'; // User's role in the group

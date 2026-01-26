@@ -4,6 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { GroupMember, GroupInvite } from "@/types/expense";
 import { toast } from "sonner";
 
+interface OwnerProfile {
+  userId: string;
+  displayName?: string;
+  avatarUrl?: string;
+}
+
 export function useGroupMembers(groupId: string | null) {
   const { user } = useAuth();
   const [members, setMembers] = useState<GroupMember[]>([]);
@@ -11,19 +17,21 @@ export function useGroupMembers(groupId: string | null) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [ownerProfile, setOwnerProfile] = useState<OwnerProfile | null>(null);
 
   // Fetch members and check permissions
   const fetchMembers = useCallback(async () => {
     if (!groupId || !user) {
       setMembers([]);
       setInvites([]);
+      setOwnerProfile(null);
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
     try {
-      // Check if user is owner
+      // Check if user is owner and get owner profile
       const { data: group } = await supabase
         .from("groups")
         .select("user_id")
@@ -32,6 +40,23 @@ export function useGroupMembers(groupId: string | null) {
 
       const userIsOwner = group?.user_id === user.id;
       setIsOwner(userIsOwner);
+
+      // Fetch owner's profile
+      if (group?.user_id) {
+        const { data: ownerProfileData } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url")
+          .eq("user_id", group.user_id)
+          .single();
+        
+        if (ownerProfileData) {
+          setOwnerProfile({
+            userId: ownerProfileData.user_id,
+            displayName: ownerProfileData.display_name || undefined,
+            avatarUrl: ownerProfileData.avatar_url || undefined,
+          });
+        }
+      }
 
       // Fetch members with profile info
       const { data: membersData, error: membersError } = await supabase
@@ -240,6 +265,7 @@ export function useGroupMembers(groupId: string | null) {
     isLoading,
     isAdmin,
     isOwner,
+    ownerProfile,
     generateInviteLink,
     deactivateInvite,
     removeMember,
