@@ -25,7 +25,7 @@ import { useFirstGroupTutorial } from "@/hooks/useFirstGroupTutorial";
 import { BottomNavItem } from "@/components/BottomNavItem";
 import { useGroupMembers } from "@/hooks/useGroupMembers";
 import GroupSettings from "@/pages/GroupSettings";
-import { Users, Receipt, BarChart3, ArrowLeft, History, Repeat, Loader2, Settings } from "lucide-react";
+import { Users, Receipt, BarChart3, ArrowLeft, History, Repeat, Loader2, Settings, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LucideIcon } from "@/components/LucideIcon";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +38,7 @@ const Index = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabValue>("expenses");
   const [viewMode, setViewMode] = useState<ViewMode>("main");
+  const [showHelpTutorial, setShowHelpTutorial] = useState(false);
 
   // First group tutorial hook
   const { showTutorial, triggerTutorial, closeTutorial } = useFirstGroupTutorial();
@@ -486,10 +487,19 @@ const Index = () => {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {isLoading && (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-1" />
             )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowHelpTutorial(true)}
+              className="h-9 w-9 opacity-60 hover:opacity-100"
+              title="Ajuda"
+            >
+              <HelpCircle className="h-5 w-5" />
+            </Button>
             {(isOwner || isAdmin) && (
               <Button
                 variant="ghost"
@@ -568,6 +578,9 @@ const Index = () => {
           </div>
         </div>
       </nav>
+
+      {/* Help tutorial modal (manual trigger) */}
+      <FirstGroupTutorial open={showHelpTutorial} onClose={() => setShowHelpTutorial(false)} />
     </div>
   );
 };
