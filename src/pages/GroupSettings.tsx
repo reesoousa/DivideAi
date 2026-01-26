@@ -48,9 +48,19 @@ const iconOptions = [
   "GraduationCap", "Tent", "PartyPopper", "Building2", "Wallet"
 ];
 
+interface ParticipantData {
+  id: string;
+  name: string;
+  participationPercentage?: number;
+  avatar?: string;
+  avatarType?: 'color' | 'image';
+  avatarImage?: string;
+  userId?: string;
+}
+
 interface GroupSettingsProps {
   group: Group;
-  participants: { id: string; name: string; participationPercentage?: number }[];
+  participants: ParticipantData[];
   onBack: () => void;
   onUpdateGroup: (id: string, updates: Partial<Group>) => Promise<void>;
   onDeleteGroup: (id: string) => Promise<void>;
@@ -86,18 +96,48 @@ export default function GroupSettings({
   const [splitType, setSplitType] = useState<'equal' | 'percentage'>(group.splitType || 'equal');
   const [percentages, setPercentages] = useState<Record<string, number>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingSplit, setIsSavingSplit] = useState(false);
+  const [hasUnsavedSplitChanges, setHasUnsavedSplitChanges] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Initialize percentages from participants
+  // Initialize percentages from participants - auto-distribute evenly
   useEffect(() => {
+    if (participants.length === 0) return;
+    
     const initial: Record<string, number> = {};
-    participants.forEach(p => {
-      initial[p.id] = p.participationPercentage ?? 100 / participants.length;
-    });
+    const equalShare = 100 / participants.length;
+    
+    // Check if any participant has a custom percentage set
+    const hasCustomPercentages = participants.some(p => 
+      p.participationPercentage !== undefined && 
+      Math.abs(p.participationPercentage - equalShare) > 0.01
+    );
+    
+    if (hasCustomPercentages) {
+      // Use saved percentages
+      participants.forEach(p => {
+        initial[p.id] = p.participationPercentage ?? equalShare;
+      });
+    } else {
+      // Auto-distribute evenly with proper rounding
+      let remaining = 100;
+      participants.forEach((p, index) => {
+        if (index === participants.length - 1) {
+          // Last participant gets the remainder to ensure exactly 100%
+          initial[p.id] = Math.round(remaining * 100) / 100;
+        } else {
+          const share = Math.round(equalShare * 100) / 100;
+          initial[p.id] = share;
+          remaining -= share;
+        }
+      });
+    }
+    
     setPercentages(initial);
+    setHasUnsavedSplitChanges(false);
   }, [participants]);
 
   const totalPercentage = Object.values(percentages).reduce((sum, p) => sum + p, 0);
@@ -131,26 +171,108 @@ export default function GroupSettings({
     }
   };
 
-  const handlePercentageChange = (participantId: string, value: number) => {
-    setPercentages(prev => ({
-      ...prev,
-      [participantId]: Math.max(0, Math.min(100, value)),
-    }));
+  // Auto-adjust other percentages when one changes
+  const handlePercentageChange = (participantId: string, newValue: number) => {
+    const clampedValue = Math.max(0, Math.min(100, newValue));
+    const otherParticipants = participants.filter(p => p.id !== participantId);
+    
+    if (otherParticipants.length === 0) {
+      setPercentages({ [participantId]: 100 });
+      setHasUnsavedSplitChanges(true);
+      return;
+    }
+    
+    const remaining = 100 - clampedValue;
+    const currentOthersTotal = otherParticipants.reduce(
+      (sum, p) => sum + (percentages[p.id] || 0), 
+      0
+    );
+    
+    const newPercentages: Record<string, number> = {
+      [participantId]: clampedValue,
+    };
+    
+    if (currentOthersTotal > 0) {
+      // Distribute proportionally among others
+      let distributed = 0;
+      otherParticipants.forEach((p, index) => {
+        const currentShare = percentages[p.id] || 0;
+        const proportion = currentShare / currentOthersTotal;
+        
+        if (index === otherParticipants.length - 1) {
+          // Last one gets the remainder
+          newPercentages[p.id] = Math.round((remaining - distributed) * 100) / 100;
+        } else {
+          const share = Math.round(remaining * proportion * 100) / 100;
+          newPercentages[p.id] = share;
+          distributed += share;
+        }
+      });
+    } else {
+      // Distribute equally among others
+      const equalShare = remaining / otherParticipants.length;
+      let distributed = 0;
+      otherParticipants.forEach((p, index) => {
+        if (index === otherParticipants.length - 1) {
+          newPercentages[p.id] = Math.round((remaining - distributed) * 100) / 100;
+        } else {
+          const share = Math.round(equalShare * 100) / 100;
+          newPercentages[p.id] = share;
+          distributed += share;
+        }
+      });
+    }
+    
+    setPercentages(newPercentages);
+    setHasUnsavedSplitChanges(true);
   };
 
   const distributeEqually = () => {
-    const equalPercentage = 100 / participants.length;
     const newPercentages: Record<string, number> = {};
-    participants.forEach(p => {
-      newPercentages[p.id] = Math.round(equalPercentage * 100) / 100;
+    let remaining = 100;
+    
+    participants.forEach((p, index) => {
+      if (index === participants.length - 1) {
+        newPercentages[p.id] = Math.round(remaining * 100) / 100;
+      } else {
+        const share = Math.round((100 / participants.length) * 100) / 100;
+        newPercentages[p.id] = share;
+        remaining -= share;
+      }
     });
-    // Adjust last one to make sure sum is exactly 100
-    if (participants.length > 0) {
-      const sum = Object.values(newPercentages).reduce((a, b) => a + b, 0);
-      const lastId = participants[participants.length - 1].id;
-      newPercentages[lastId] += 100 - sum;
-    }
+    
     setPercentages(newPercentages);
+    setHasUnsavedSplitChanges(true);
+  };
+
+  // Save split settings separately
+  const handleSaveSplitSettings = async () => {
+    setIsSavingSplit(true);
+    try {
+      // Update group split type
+      await onUpdateGroup(group.id, { splitType });
+      
+      // Save each participant's percentage
+      if (splitType === 'percentage') {
+        for (const [participantId, percentage] of Object.entries(percentages)) {
+          await onUpdateParticipantPercentage(participantId, percentage);
+        }
+      } else {
+        // Reset to equal distribution when switching to equal mode
+        const equalShare = 100 / participants.length;
+        for (const p of participants) {
+          await onUpdateParticipantPercentage(p.id, equalShare);
+        }
+      }
+      
+      setHasUnsavedSplitChanges(false);
+      toast.success("Forma de divisão salva! Os cálculos foram atualizados.");
+    } catch (error) {
+      console.error("Error saving split settings:", error);
+      toast.error("Erro ao salvar configurações de divisão");
+    } finally {
+      setIsSavingSplit(false);
+    }
   };
 
   const handleGenerateLink = async () => {
@@ -400,7 +522,7 @@ export default function GroupSettings({
           </Card>
         )}
 
-        {/* Members Section */}
+        {/* Members Section - Shows ALL participants */}
         <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -408,7 +530,7 @@ export default function GroupSettings({
               Membros do Grupo
             </CardTitle>
             <CardDescription>
-              {members.length + 1} pessoa(s) no grupo
+              {participants.length} pessoa(s) no grupo
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -418,102 +540,115 @@ export default function GroupSettings({
               </div>
             ) : (
               <>
-                {/* Owner (shown separately with profile) */}
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <Avatar className="h-10 w-10">
-                    {ownerProfile?.avatarUrl ? (
-                      <AvatarImage src={ownerProfile.avatarUrl} />
-                    ) : null}
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {ownerProfile?.displayName 
-                        ? getInitials(ownerProfile.displayName)
-                        : <Crown className="h-4 w-4" />
+                {/* Show all participants with their roles */}
+                {participants.map((participant) => {
+                  // Determine the role for this participant
+                  const isParticipantOwner = participant.userId === ownerProfile?.userId;
+                  const memberRecord = members.find(m => m.userId === participant.userId);
+                  const isParticipantAdmin = memberRecord?.role === 'admin';
+                  const isCurrentUser = participant.userId === user?.id;
+                  
+                  // Get avatar display
+                  const getAvatarContent = () => {
+                    if (participant.avatarType === 'image' && participant.avatarImage) {
+                      return <AvatarImage src={participant.avatarImage} />;
+                    }
+                    if (participant.userId) {
+                      // Check if this is a linked user - get their profile avatar
+                      if (isParticipantOwner && ownerProfile?.avatarUrl) {
+                        return <AvatarImage src={ownerProfile.avatarUrl} />;
                       }
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">
-                      {isOwner ? "Você" : (ownerProfile?.displayName || "Proprietário")}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <Badge variant="secondary" className="text-xs">
-                        <Crown className="h-3 w-3 mr-1" />
-                        Proprietário
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
+                      if (memberRecord?.avatarUrl) {
+                        return <AvatarImage src={memberRecord.avatarUrl} />;
+                      }
+                    }
+                    return null;
+                  };
+                  
+                  const getAvatarFallbackClass = () => {
+                    if (participant.avatarType === 'color' && participant.avatar) {
+                      return participant.avatar;
+                    }
+                    return isParticipantOwner ? 'bg-primary' : 'bg-muted';
+                  };
 
-                {/* Other members */}
-                {members.map((member) => (
-                  <div 
-                    key={member.id}
-                    className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg"
-                  >
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={member.avatarUrl || undefined} />
-                      <AvatarFallback>
-                        {getInitials(member.displayName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">
-                        {member.userId === user?.id ? "Você" : (member.displayName || "Membro")}
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline" className="text-xs">
-                          {member.role === 'admin' ? (
-                            <>
+                  return (
+                    <div 
+                      key={participant.id}
+                      className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg"
+                    >
+                      <Avatar className="h-10 w-10">
+                        {getAvatarContent()}
+                        <AvatarFallback className={`${getAvatarFallbackClass()} text-primary-foreground`}>
+                          {participant.name 
+                            ? getInitials(participant.name)
+                            : <User className="h-4 w-4" />
+                          }
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">
+                          {isCurrentUser ? "Você" : participant.name}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          {isParticipantOwner ? (
+                            <Badge variant="secondary" className="text-xs">
+                              <Crown className="h-3 w-3 mr-1" />
+                              Proprietário
+                            </Badge>
+                          ) : isParticipantAdmin ? (
+                            <Badge variant="outline" className="text-xs">
                               <Shield className="h-3 w-3 mr-1" />
                               Admin
-                            </>
+                            </Badge>
                           ) : (
-                            <>
+                            <Badge variant="outline" className="text-xs">
                               <User className="h-3 w-3 mr-1" />
                               Membro
-                            </>
+                            </Badge>
                           )}
-                        </Badge>
+                        </div>
                       </div>
+                      {/* Admin controls for linked members only */}
+                      {(isOwner || isAdmin) && participant.userId && !isCurrentUser && !isParticipantOwner && memberRecord && (
+                        <div className="flex items-center gap-1">
+                          {!isParticipantAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => updateMemberRole(memberRecord.id, 'admin')}
+                              className="text-xs"
+                            >
+                              Promover
+                            </Button>
+                          )}
+                          {isParticipantAdmin && isOwner && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => updateMemberRole(memberRecord.id, 'member')}
+                              className="text-xs text-muted-foreground"
+                            >
+                              Rebaixar
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeMember(memberRecord.id)}
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    {(isOwner || isAdmin) && member.userId !== user?.id && (
-                      <div className="flex items-center gap-1">
-                        {member.role !== 'admin' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateMemberRole(member.id, 'admin')}
-                            className="text-xs"
-                          >
-                            Promover
-                          </Button>
-                        )}
-                        {member.role === 'admin' && isOwner && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateMemberRole(member.id, 'member')}
-                            className="text-xs text-muted-foreground"
-                          >
-                            Rebaixar
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeMember(member.id)}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
 
-                {members.length === 0 && (
+                {participants.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Apenas você está no grupo. Convide outras pessoas!
+                    Nenhum participante no grupo ainda.
                   </p>
                 )}
               </>
@@ -539,7 +674,10 @@ export default function GroupSettings({
                 <Button
                   variant={splitType === 'equal' ? 'default' : 'outline'}
                   className="flex-1"
-                  onClick={() => setSplitType('equal')}
+                  onClick={() => {
+                    setSplitType('equal');
+                    setHasUnsavedSplitChanges(true);
+                  }}
                 >
                   <Equal className="h-4 w-4 mr-2" />
                   Divisão Igual
@@ -547,7 +685,10 @@ export default function GroupSettings({
                 <Button
                   variant={splitType === 'percentage' ? 'default' : 'outline'}
                   className="flex-1"
-                  onClick={() => setSplitType('percentage')}
+                  onClick={() => {
+                    setSplitType('percentage');
+                    setHasUnsavedSplitChanges(true);
+                  }}
                 >
                   <Percent className="h-4 w-4 mr-2" />
                   Por Porcentagem
@@ -573,6 +714,14 @@ export default function GroupSettings({
                   <div className="space-y-3">
                     {participants.map((participant) => (
                       <div key={participant.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                        <Avatar className="h-8 w-8">
+                          {participant.avatarType === 'image' && participant.avatarImage ? (
+                            <AvatarImage src={participant.avatarImage} />
+                          ) : null}
+                          <AvatarFallback className={`${participant.avatar || 'bg-muted'} text-primary-foreground text-xs`}>
+                            {getInitials(participant.name)}
+                          </AvatarFallback>
+                        </Avatar>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate text-sm">{participant.name}</p>
                         </div>
@@ -581,8 +730,8 @@ export default function GroupSettings({
                             type="number"
                             min="0"
                             max="100"
-                            step="0.1"
-                            value={percentages[participant.id] || 0}
+                            step="1"
+                            value={Math.round(percentages[participant.id] || 0)}
                             onChange={(e) => handlePercentageChange(participant.id, parseFloat(e.target.value) || 0)}
                             className="w-20 text-right"
                           />
@@ -592,19 +741,14 @@ export default function GroupSettings({
                     ))}
                   </div>
 
-                  {/* Total percentage indicator */}
-                  <div className={`p-3 rounded-lg ${isPercentageValid ? 'bg-green-500/10 border border-green-500/30' : 'bg-destructive/10 border border-destructive/30'}`}>
+                  {/* Total percentage indicator - always valid now */}
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Total:</span>
-                      <span className={`font-bold ${isPercentageValid ? 'text-green-600' : 'text-destructive'}`}>
-                        {totalPercentage.toFixed(1)}%
+                      <span className="font-bold text-primary">
+                        {totalPercentage.toFixed(0)}%
                       </span>
                     </div>
-                    {!isPercentageValid && (
-                      <p className="text-xs text-destructive mt-1">
-                        A soma das porcentagens deve ser exatamente 100%
-                      </p>
-                    )}
                   </div>
                 </div>
               )}
@@ -615,6 +759,27 @@ export default function GroupSettings({
                     Cada participante paga uma parte igual das despesas.
                   </p>
                 </div>
+              )}
+
+              {/* Save button for split settings */}
+              <Separator />
+              <Button
+                onClick={handleSaveSplitSettings}
+                disabled={isSavingSplit}
+                className="w-full"
+                variant={hasUnsavedSplitChanges ? 'default' : 'outline'}
+              >
+                {isSavingSplit ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Check className="h-4 w-4 mr-2" />
+                )}
+                Salvar forma de divisão
+              </Button>
+              {hasUnsavedSplitChanges && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Você tem alterações não salvas
+                </p>
               )}
             </CardContent>
           </Card>
