@@ -172,13 +172,6 @@ export function FirstGroupTutorial({ open, onClose }: FirstGroupTutorialProps) {
             )}
           </div>
 
-          {/* Skip link */}
-          <button
-            onClick={handleClose}
-            className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Pular tutorial
-          </button>
         </div>
       </DialogContent>
     </Dialog>
