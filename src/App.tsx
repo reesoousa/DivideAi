@@ -11,6 +11,7 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import JoinGroup from "./pages/JoinGroup";
 import NotFound from "./pages/NotFound";
+import { OnboardingSlider, useOnboarding } from "@/components/OnboardingSlider";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,24 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function OnboardingWrapper({ children }: { children: React.ReactNode }) {
+  const { showOnboarding, isChecking, completeOnboarding } = useOnboarding();
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (showOnboarding) {
+    return <OnboardingSlider onComplete={completeOnboarding} />;
+  }
+
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -71,9 +90,11 @@ const App = () => (
               <Route
                 path="/auth"
                 element={
-                  <PublicRoute>
-                    <Auth />
-                  </PublicRoute>
+                  <OnboardingWrapper>
+                    <PublicRoute>
+                      <Auth />
+                    </PublicRoute>
+                  </OnboardingWrapper>
                 }
               />
               <Route
