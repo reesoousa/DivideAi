@@ -51,6 +51,7 @@ export function useSupabaseGroups() {
         createdAt: new Date(g.created_at),
         isRecurring: g.is_recurring,
         billingDay: g.billing_day || undefined,
+        splitType: (g.split_type as 'equal' | 'percentage') || 'equal',
       }));
 
       setGroups(mappedGroups);
@@ -136,6 +137,7 @@ export function useSupabaseGroups() {
         createdAt: new Date(data.created_at),
         isRecurring: data.is_recurring,
         billingDay: data.billing_day || undefined,
+        splitType: (data.split_type as 'equal' | 'percentage') || 'equal',
       };
 
       setGroups((prev) => [mappedGroup, ...prev]);
@@ -179,6 +181,7 @@ export function useSupabaseGroups() {
       if (updates.color !== undefined) dbUpdates.color = updates.color;
       if (updates.isRecurring !== undefined) dbUpdates.is_recurring = updates.isRecurring;
       if (updates.billingDay !== undefined) dbUpdates.billing_day = updates.billingDay;
+      if (updates.splitType !== undefined) dbUpdates.split_type = updates.splitType;
 
       const { error } = await supabase
         .from("groups")

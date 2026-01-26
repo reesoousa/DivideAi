@@ -157,6 +157,7 @@ export type Database = {
           id: string
           is_recurring: boolean
           name: string
+          split_type: string
           updated_at: string
           user_id: string
         }
@@ -169,6 +170,7 @@ export type Database = {
           id?: string
           is_recurring?: boolean
           name: string
+          split_type?: string
           updated_at?: string
           user_id: string
         }
@@ -181,6 +183,7 @@ export type Database = {
           id?: string
           is_recurring?: boolean
           name?: string
+          split_type?: string
           updated_at?: string
           user_id?: string
         }

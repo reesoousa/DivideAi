@@ -16,6 +16,7 @@ interface TransparencyCardProps {
   balanceDetails: BalanceDetail[];
   settlements: Settlement[];
   totalExpenses: number;
+  splitType?: 'equal' | 'percentage';
 }
 
 function formatCurrency(value: number): string {
@@ -31,6 +32,7 @@ export function TransparencyCard({
   balanceDetails,
   settlements,
   totalExpenses,
+  splitType = 'equal',
 }: TransparencyCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -43,7 +45,7 @@ export function TransparencyCard({
   }
 
   const perPerson = totalExpenses / participants.length;
-
+  const isPercentageMode = splitType === 'percentage';
   return (
     <Card className="border-primary/20">
       <CardHeader className="pb-3">
@@ -104,19 +106,44 @@ export function TransparencyCard({
 
             <AccordionItem value="step2">
               <AccordionTrigger className="text-sm font-medium">
-                2. Valor por Pessoa (Divisão Igual)
+                2. Valor por Pessoa ({isPercentageMode ? 'Divisão por Porcentagem' : 'Divisão Igual'})
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    Fórmula: Total ÷ Número de Participantes
-                  </p>
-                  <div className="font-mono text-sm bg-background p-2 rounded">
-                    {formatCurrency(totalExpenses)} ÷ {participants.length} = {formatCurrency(perPerson)}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Cada pessoa deveria pagar <strong>{formatCurrency(perPerson)}</strong> para dividir igualmente.
-                  </p>
+                  {isPercentageMode ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Fórmula: Total × Porcentagem do Participante
+                      </p>
+                      <div className="space-y-2 mt-3">
+                        {participants.map((p) => {
+                          const percentage = p.participationPercentage || (100 / participants.length);
+                          const amount = totalExpenses * (percentage / 100);
+                          return (
+                            <div key={p.id} className="font-mono text-sm bg-background p-2 rounded flex justify-between items-center">
+                              <span>{p.name} ({percentage.toFixed(1)}%)</span>
+                              <span className="text-primary">{formatCurrency(amount)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Cada pessoa paga de acordo com sua porcentagem definida nas configurações do grupo.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Fórmula: Total ÷ Número de Participantes
+                      </p>
+                      <div className="font-mono text-sm bg-background p-2 rounded">
+                        {formatCurrency(totalExpenses)} ÷ {participants.length} = {formatCurrency(perPerson)}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Cada pessoa deveria pagar <strong>{formatCurrency(perPerson)}</strong> para dividir igualmente.
+                      </p>
+                    </>
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -215,9 +242,15 @@ export function TransparencyCard({
                 <div className="space-y-3 p-3 bg-muted/50 rounded-lg text-sm">
                   <div>
                     <p className="font-medium">Valor por Pessoa:</p>
-                    <code className="block bg-background p-2 rounded mt-1 font-mono text-xs">
-                      valorPorPessoa = totalGastos / numParticipantes
-                    </code>
+                    {isPercentageMode ? (
+                      <code className="block bg-background p-2 rounded mt-1 font-mono text-xs">
+                        valorPorPessoa = totalGastos × (porcentagem / 100)
+                      </code>
+                    ) : (
+                      <code className="block bg-background p-2 rounded mt-1 font-mono text-xs">
+                        valorPorPessoa = totalGastos / numParticipantes
+                      </code>
+                    )}
                   </div>
                   <div>
                     <p className="font-medium">Balanço Individual:</p>
