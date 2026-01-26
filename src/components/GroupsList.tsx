@@ -42,6 +42,7 @@ interface GroupsListProps {
   onAddGroup: (name: string, description?: string, isRecurring?: boolean, billingDay?: number, icon?: string) => Promise<string | null>;
   onRemoveGroup: (id: string) => void;
   onSelectGroup: (id: string) => void;
+  onFirstGroupCreated?: () => void;
 }
 
 export function GroupsList({
@@ -49,6 +50,7 @@ export function GroupsList({
   onAddGroup,
   onRemoveGroup,
   onSelectGroup,
+  onFirstGroupCreated,
 }: GroupsListProps) {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupDescription, setNewGroupDescription] = useState("");
@@ -61,9 +63,10 @@ export function GroupsList({
 
   const handleAdd = async () => {
     if (newGroupName.trim() && !isCreating) {
+      const isFirstGroup = groups.length === 0;
       setIsCreating(true);
       try {
-        await onAddGroup(
+        const groupId = await onAddGroup(
           newGroupName.trim(),
           newGroupDescription.trim() || undefined,
           isRecurring,
@@ -71,6 +74,14 @@ export function GroupsList({
           selectedIcon
         );
         resetForm();
+        
+        // Trigger first group tutorial if this was the first group
+        if (isFirstGroup && groupId && onFirstGroupCreated) {
+          // Small delay to let the group be selected first
+          setTimeout(() => {
+            onFirstGroupCreated();
+          }, 300);
+        }
       } finally {
         setIsCreating(false);
       }

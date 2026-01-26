@@ -15,11 +15,13 @@ import { MonthSelector } from "@/components/MonthSelector";
 import { RecurringItemsList } from "@/components/RecurringItemsList";
 import { RecurringSummaryCard } from "@/components/RecurringSummaryCard";
 import { PullToRefresh } from "@/components/PullToRefresh";
+import { FirstGroupTutorial } from "@/components/FirstGroupTutorial";
 import { useSupabaseGroups } from "@/hooks/useSupabaseGroups";
 import { useSupabaseParticipants } from "@/hooks/useSupabaseParticipants";
 import { useSupabaseExpenses } from "@/hooks/useSupabaseExpenses";
 import { useSupabasePayments } from "@/hooks/useSupabasePayments";
 import { useSupabaseRecurringItems } from "@/hooks/useSupabaseRecurringItems";
+import { useFirstGroupTutorial } from "@/hooks/useFirstGroupTutorial";
 import { BottomNavItem } from "@/components/BottomNavItem";
 import { useGroupMembers } from "@/hooks/useGroupMembers";
 import GroupSettings from "@/pages/GroupSettings";
@@ -36,6 +38,9 @@ const Index = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabValue>("expenses");
   const [viewMode, setViewMode] = useState<ViewMode>("main");
+
+  // First group tutorial hook
+  const { showTutorial, triggerTutorial, closeTutorial } = useFirstGroupTutorial();
 
   // Groups hook with Supabase persistence
   const {
@@ -411,14 +416,17 @@ const Index = () => {
                 onAddGroup={addGroup}
                 onRemoveGroup={removeGroup}
                 onSelectGroup={selectGroup}
+                onFirstGroupCreated={triggerTutorial}
               />
             )}
           </main>
         </PullToRefresh>
+
+        {/* First group tutorial modal */}
+        <FirstGroupTutorial open={showTutorial} onClose={closeTutorial} />
       </div>
     );
   }
-
   // If showing group settings
   if (viewMode === "settings" && selectedGroup) {
     return (
