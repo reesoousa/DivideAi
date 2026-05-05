@@ -256,6 +256,10 @@ export function ParticipantsList({
                             ))}
                           </div>
 
+                          {invites[0] && (
+                            <InviteQRCode inviteCode={invites[0].inviteCode} size={160} />
+                          )}
+
                           {/* Revoke invite with confirmation */}
                           {onRevokeInvite && (
                             <AlertDialog>
