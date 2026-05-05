@@ -458,6 +458,10 @@ export default function GroupSettings({
                     ))}
                   </div>
 
+                  {invites[0] && (
+                    <InviteQRCode inviteCode={invites[0].inviteCode} size={180} />
+                  )}
+
                   {/* Revoke invite with confirmation */}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
