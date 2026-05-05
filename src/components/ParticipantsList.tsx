@@ -26,6 +26,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PixKeyManager } from "./PixKeyManager";
+import { InviteQRCode } from "./InviteQRCode";
 import { toast } from "sonner";
 
 interface ParticipantsListProps {
@@ -254,6 +255,10 @@ export function ParticipantsList({
                               </div>
                             ))}
                           </div>
+
+                          {invites[0] && (
+                            <InviteQRCode inviteCode={invites[0].inviteCode} size={160} />
+                          )}
 
                           {/* Revoke invite with confirmation */}
                           {onRevokeInvite && (

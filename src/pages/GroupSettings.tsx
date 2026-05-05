@@ -39,6 +39,7 @@ import {
   Equal,
 } from "lucide-react";
 import { LucideIcon } from "@/components/LucideIcon";
+import { InviteQRCode } from "@/components/InviteQRCode";
 import { toast } from "sonner";
 
 // Icon options for groups (16 icons for 4x4 grid)
@@ -456,6 +457,10 @@ export default function GroupSettings({
                       </div>
                     ))}
                   </div>
+
+                  {invites[0] && (
+                    <InviteQRCode inviteCode={invites[0].inviteCode} size={180} />
+                  )}
 
                   {/* Revoke invite with confirmation */}
                   <AlertDialog>
